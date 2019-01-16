@@ -1,8 +1,9 @@
 FROM golang:1.10.4 as builder
-RUN mkdir -p /go/src/github.com/openfaas-incubator/connector-sdk
-WORKDIR /go/src/github.com/openfaas-incubator/connector-sdk
+RUN mkdir -p /go/src/github.com/zeerorg/cron-connector
+WORKDIR /go/src/github.com/zeerorg/cron-connector
 
 COPY vendor     vendor
+COPY types      types
 COPY main.go    .
 
 # Run a gofmt and exclude all vendored code.
@@ -15,6 +16,6 @@ RUN GOARM=7 CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-s -w" -installsuffix
 
 FROM alpine:3.8
 
-COPY --from=builder /go/src/github.com/openfaas-incubator/connector-sdk/    .
+COPY --from=builder /go/src/github.com/zeerorg/cron-connector/    .
 
 CMD ["./connector"]

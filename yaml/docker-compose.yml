@@ -1,10 +1,10 @@
 version: '3.2'
 services:
-  connector:
-    image: zeerorg/connector-sample:1.0
-    hostname: sample-connector
+  cron-connector:
+    image: 192.168.1.9:5000/cron-connector
+    hostname: cron-connector
     environment:
-      gateway_url: http://gateway:8080
+      gateway_url: "http://gateway:8080"
       basic_auth: "true"
       secret_mount_path: "/run/secrets/"
     secrets:
