@@ -1,8 +1,9 @@
 FROM golang:1.10.4 as builder
-RUN mkdir -p /go/src/github.com/openfaas-incubator/connector-sdk
-WORKDIR /go/src/github.com/openfaas-incubator/connector-sdk
+RUN mkdir -p /go/src/github.com/zeerorg/cron-connector
+WORKDIR /go/src/github.com/zeerorg/cron-connector
 
 COPY vendor     vendor
+COPY types      types
 COPY main.go    .
 
 # Run a gofmt and exclude all vendored code.
@@ -20,7 +21,7 @@ RUN addgroup -S app \
 
 WORKDIR /home/app
 
-COPY --from=builder /go/src/github.com/openfaas-incubator/connector-sdk/    .
+COPY --from=builder /go/src/github.com/zeerorg/cron-connector/    .
 
 RUN chown -R app:app ./
 
