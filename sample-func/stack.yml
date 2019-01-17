@@ -1,0 +1,10 @@
+provider:
+  name: faas
+  gateway: http://localhost:8080
+
+functions:
+  fn1:
+    image: functions/nodeinfo
+    annotations:
+      topic: cron-function
+      schedule: "* * * * *"
