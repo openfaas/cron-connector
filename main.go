@@ -6,13 +6,13 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"time"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
 	cfunction "github.com/zeerorg/cron-connector/types"
-	"gopkg.in/robfig/cron.v2"
 )
 
 func main() {
@@ -24,25 +24,16 @@ func main() {
 	}
 
 	controller := types.NewController(creds, config)
-	cronScheduler := cron.New()
+	cronScheduler := cfunction.NewScheduler()
 	topic := "cron-function"
-	interval := time.Second * 2
+	interval := time.Second * 30
 
 	cronScheduler.Start()
 	err = startFunctionProbe(interval, topic, controller, cronScheduler, controller.Invoker)
+
 	if err != nil {
 		panic(err)
 	}
-
-	// How to do it
-	// 1. Fetch all Functions with given topic ("cron-function")
-	// 2. Fetch their names and schedule
-	// 3. Compare the names and schedule with the existing functions.
-	// 4. Remove Deleted functions from scheduler
-	// 5. Add new functions to the scheduler
-	// 6. Repeat
-	// To keep in mind: Don't touch previous jobs
-
 }
 
 func getControllerConfig() (*types.ControllerConfig, error) {
@@ -59,7 +50,7 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 	}, nil
 }
 
-func startFunctionProbe(interval time.Duration, topic string, c *types.Controller, cronScheduler *cron.Cron, invoker *types.Invoker) error {
+func startFunctionProbe(interval time.Duration, topic string, c *types.Controller, cronScheduler *cfunction.Scheduler, invoker *types.Invoker) error {
 	cFs := make(cfunction.CronFunctions, 0)
 	lookupBuilder := cfunction.FunctionLookupBuilder{
 		GatewayURL:  c.Config.GatewayURL,
@@ -67,7 +58,7 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 		Credentials: c.Credentials,
 	}
 	ticker := time.NewTicker(interval)
-	jobEntries := make(map[string]cron.EntryID)
+	jobEntries := make(map[string]cfunction.EntryID)
 
 	defer ticker.Stop()
 
@@ -76,8 +67,7 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 		functions, err := lookupBuilder.GetFunctions()
 
 		if err != nil {
-			log.Fatal("Couldn't fetch Functions due to: ", err)
-			continue
+			return errors.New(fmt.Sprint("Couldn't fetch Functions due to: ", err))
 		}
 
 		newCFs := make(cfunction.CronFunctions, 0)
@@ -94,18 +84,21 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 
 			// Schedule new entries
 			if _, ok := jobEntries[cF.Name]; !ok {
-				eID, err := cronScheduler.AddFunc(cF.Schedule, func() { cF.InvokeFunction(invoker) })
+				eID, err := cronScheduler.AddCronFunction(&cF, invoker)
 
 				if err != nil {
 					return err
 				}
 
 				jobEntries[cF.Name] = eID
+
+				// Update schedule of entries
 			} else {
 				for _, tempF := range cFs {
+					// Search for entries that have same name but different schedule, hence update that entry
 					if tempF.Name == cF.Name && tempF.Schedule != cF.Schedule {
 						cronScheduler.Remove(jobEntries[cF.Name])
-						eID, err := cronScheduler.AddFunc(cF.Schedule, func() { cF.InvokeFunction(invoker) })
+						eID, err := cronScheduler.AddCronFunction(&cF, invoker)
 
 						if err != nil {
 							return err

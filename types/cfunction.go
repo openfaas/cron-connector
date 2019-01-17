@@ -10,7 +10,6 @@ import (
 
 	"github.com/openfaas-incubator/connector-sdk/types"
 	"github.com/openfaas/faas/gateway/requests"
-	"gopkg.in/robfig/cron.v2"
 )
 
 // CronFunction depicts an OpenFaas function which is invoked by cron
@@ -28,7 +27,7 @@ func (c *CronFunctions) Contains(cF *CronFunction) bool {
 
 	for _, f := range *c {
 
-		if f.Name == cF.Name {
+		if f.Name == cF.Name && f.Schedule == cF.Schedule {
 			return true
 		}
 
@@ -46,7 +45,7 @@ func ToCronFunction(f *requests.Function, topic string) (CronFunction, error) {
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has wrong topic: ", fTopic))
 	}
 
-	if _, err := cron.Parse(fSchedule); err != nil {
+	if !CheckSchedule(fSchedule) {
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has wrong cron schedule: ", fSchedule))
 	}
 
