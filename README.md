@@ -1,18 +1,20 @@
-# OpenFaas Sample Connector
+# OpenFaas Cron Connector
 
-This folder contains a sample OpenFaas connector. You can use this as a base for creating your own connectors.
-For a more complex example checkout [kafka-connector](https://github.com/openfaas-incubator/kafka-connector)
+This is a cron engine for OpenFaas. OpenFaas doesn't come with a timer tigger, hence this was built to provide timer interface with OpenFaas.
 
 ## How to Use
 
-1. Clone this repository: `git clone https://github.com/openfaas-incubator/connector-sdk.git`
-2. Go into the directory: `cd ./connector-sdk/cmd/tester/yaml`
-3. For OpenFaas deployed on Docker Swarm do: `docker stack deploy func -c ./docker-compose.yml`
+1. Clone this repository: `git clone https://github.com/zeerorg/cron-connector && cd cron-connector`
+2. For OpenFaas deployed on Docker Swarm do: `docker stack deploy func -c ./docker-compose.yml`
+3. For OpenFaas on RaspberryPi with Docker Swarm do: `docker stack deploy func -c ./docker-compose.armhf.yml`
 4. For OpenFaas deployed on kubernetes do: `kubectl create -f ./kubernetes --namespace openfaas`
+5. For OpenFaas on RaspberryPi kubernetes do: `kubectl create -f ./kubernetes-armhf --namespace openfaas`
 
-To check if it actually works and triggers a function, deploy any function with annotation `topic=faas-request`.
-You can also run this command to deploy a sample function and see `trigger-func` invocation count growing in ui.
+## Adding function
 
-```bash
-faas-cli deploy --image=functions/nodeinfo --name=trigger-func --annotation topic=faas-request
-```
+The function should have 2 annotations:
+
+1. `topic` annotation should be `cron-function`.
+2. `schedule` annotation should be the cron schedule on which to invoke function.
+
+Checkout a sample function yaml file at [sample-func/stack.yml](sample-func/stack.yml)
