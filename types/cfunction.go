@@ -38,6 +38,9 @@ func (c *CronFunctions) Contains(cF *CronFunction) bool {
 
 // ToCronFunction converts a requests.Function object to the CronFunction and returns error if it is not possible
 func ToCronFunction(f *requests.Function, topic string) (CronFunction, error) {
+	if f.Annotations == nil {
+		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has no annotations."))
+	}
 	fTopic := (*f.Annotations)["topic"]
 	fSchedule := (*f.Annotations)["schedule"]
 
