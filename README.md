@@ -5,10 +5,10 @@ This is a cron engine for OpenFaas. OpenFaas doesn't come with a timer tigger, h
 ## How to Use
 
 1. Clone this repository: `git clone https://github.com/zeerorg/cron-connector && cd cron-connector`
-2. For OpenFaas deployed on Docker Swarm do: `docker stack deploy func -c ./docker-compose.yml`
-3. For OpenFaas on RaspberryPi with Docker Swarm do: `docker stack deploy func -c ./docker-compose.armhf.yml`
-4. For OpenFaas deployed on kubernetes do: `kubectl create -f ./kubernetes --namespace openfaas`
-5. For OpenFaas on RaspberryPi kubernetes do: `kubectl create -f ./kubernetes-armhf --namespace openfaas`
+2. For OpenFaas deployed on Docker Swarm do: `docker stack deploy func -c ./yaml/docker-compose.yml`
+3. For OpenFaas on RaspberryPi with Docker Swarm do: `docker stack deploy func -c ./yaml/docker-compose.armhf.yml`
+4. For OpenFaas deployed on kubernetes do: `kubectl create -f ./yaml/kubernetes --namespace openfaas`
+5. For OpenFaas on RaspberryPi kubernetes do: `kubectl create -f ./yaml/kubernetes-armhf --namespace openfaas`
 
 ## Adding function
 
