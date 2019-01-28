@@ -13,7 +13,7 @@ import (
 // FunctionLookupBuilder alias for types.FunctionLookupBuilder
 type FunctionLookupBuilder types.FunctionLookupBuilder
 
-// GetFunctions requests the OpenFaas gteway to return a list of all functions
+// GetFunctions requests the OpenFaaS gteway to return a list of all functions
 func (lookup *FunctionLookupBuilder) GetFunctions() ([]requests.Function, error) {
 	req, _ := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/system/functions", lookup.GatewayURL), nil)
 
