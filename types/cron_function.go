@@ -12,7 +12,7 @@ import (
 	"github.com/openfaas/faas/gateway/requests"
 )
 
-// CronFunction depicts an OpenFaas function which is invoked by cron
+// CronFunction depicts an OpenFaaS function which is invoked by cron
 type CronFunction struct {
 	FuncData *requests.Function
 	Name     string
