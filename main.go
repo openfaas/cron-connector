@@ -26,7 +26,7 @@ func main() {
 	controller := types.NewController(creds, config)
 	cronScheduler := cfunction.NewScheduler()
 	topic := "cron-function"
-	interval := time.Second * 30
+	interval := time.Second * 10
 
 	cronScheduler.Start()
 	err = startFunctionProbe(interval, topic, controller, cronScheduler, controller.Invoker)
@@ -85,6 +85,7 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 			// Schedule new entries
 			if _, ok := jobEntries[cF.Name]; !ok {
 				eID, err := cronScheduler.AddCronFunction(&cF, invoker)
+				log.Print("added new function ", cF.Name)
 
 				if err != nil {
 					return err
@@ -93,29 +94,20 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 				jobEntries[cF.Name] = eID
 
 				// Update schedule of entries
-			} else {
-				for _, tempF := range cFs {
-					// Search for entries that have same name but different schedule, hence update that entry
-					if tempF.Name == cF.Name && tempF.Schedule != cF.Schedule {
-						cronScheduler.Remove(jobEntries[cF.Name])
-						eID, err := cronScheduler.AddCronFunction(&cF, invoker)
-
-						if err != nil {
-							return err
-						}
-
-						jobEntries[cF.Name] = eID
-					}
-				}
 			}
 		}
+
+		log.Print("Functions are ", newCFs)
 
 		// Delete old entries
 		for _, f := range cFs {
 			if !newCFs.Contains(&f) {
 				cronScheduler.Remove(jobEntries[f.Name])
+				log.Print("deleted function ", f.Name)
 				delete(jobEntries, f.Name)
 			}
 		}
+
+		cFs = newCFs
 	}
 }
