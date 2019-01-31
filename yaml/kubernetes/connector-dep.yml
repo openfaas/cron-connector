@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: sample-connector
-        image: zeerorg/cron-connector:1.0
+        image: zeerorg/cron-connector:v0.1
         env:
           - name: gateway_url
             value: "http://gateway.openfaas:8080"
