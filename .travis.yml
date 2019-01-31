@@ -1,0 +1,18 @@
+language: go
+
+# You don't need to test on very old version of the Go compiler. It's the user's
+# responsibility to keep their compilers up to date.
+go:
+  - 1.10.4
+
+# Only clone the most recent commit.
+git:
+  depth: 1
+
+# Skip the install step. Don't `go get` dependencies. Only build with the code
+# in vendor/
+install: true
+
+# Don't email me the results of the test runs.
+notifications:
+  email: false
