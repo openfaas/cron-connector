@@ -1,7 +1,7 @@
 version: '3.2'
 services:
   cron-connector:
-    image: zeerorg/cron-connector:1.0-armhf
+    image: zeerorg/cron-connector:v0.1-arm
     hostname: cron-connector
     environment:
       gateway_url: "http://gateway:8080"
