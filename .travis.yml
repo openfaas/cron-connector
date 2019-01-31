@@ -1,3 +1,6 @@
+# sudo for docker
+sudo: true
+
 language: go
 
 # You don't need to test on very old version of the Go compiler. It's the user's
@@ -5,13 +8,38 @@ language: go
 go:
   - 1.10.4
 
+services:
+  - docker
+
 # Only clone the most recent commit.
 git:
   depth: 1
 
+# install qemu-user before running docker build
+before_install:
+  - sudo apt-get install qemu binfmt-support qemu-user-static -y
+
 # Skip the install step. Don't `go get` dependencies. Only build with the code
 # in vendor/
 install: true
+
+script:
+  - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+  - docker build .
+  - docker build -f Dockerfile.armhf .
+
+deploy:
+  provider: script
+  script:
+    - docker run --rm --privileged multiarch/qemu-user-static:register --reset
+    - docker login --username $DOCKER_USER --password $DOCKER_PASSWORD
+    - docker build -t zeerorg/cron-connector:$TRAVIS_TAG .
+    - docker push zeerorg/cron-connector:$TRAVIS_TAG
+    - docker build -t zeerorg/cron-connector:$TRAVIS_TAG-arm -f Dockerfile.armhf .
+    - docker push zeerorg/cron-connector:$TRAVIS_TAG-arm
+  skip_cleanup: true
+  on:
+    tags: true
 
 # Don't email me the results of the test runs.
 notifications:
