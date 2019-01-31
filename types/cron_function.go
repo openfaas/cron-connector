@@ -5,7 +5,6 @@ package types
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/openfaas-incubator/connector-sdk/types"
 	"github.com/openfaas/faas/gateway/requests"
+	"github.com/pkg/errors"
 )
 
 // CronFunction depicts an OpenFaaS function which is invoked by cron
@@ -76,6 +76,9 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 	res, doErr := i.Client.Do(httpReq)
 
 	if doErr != nil {
+		i.Responses <- types.InvokerResponse{
+			Error: errors.Wrap(doErr, fmt.Sprint("unable to invoke ", c.Name)),
+		}
 		return nil, doErr
 	}
 
@@ -85,11 +88,27 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 
 		if readErr != nil {
 			log.Printf("Error reading body")
+			i.Responses <- types.InvokerResponse{
+				Error: errors.Wrap(readErr, fmt.Sprint("unable to invoke ", c.Name)),
+			}
 			return nil, doErr
 		}
 
 		body = &bytesOut
 	}
 
+	i.Responses <- types.InvokerResponse{
+		Body:     body,
+		Status:   res.StatusCode,
+		Header:   &res.Header,
+		Function: c.Name,
+		Topic:    (*c.FuncData.Annotations)["topic"],
+	}
+
 	return body, nil
+}
+
+// CronFunctionInterface defines an interface to work with CronFunction during testing
+type CronFunctionInterface interface {
+	InvokeFunction(i *types.Invoker) (*[]byte, error)
 }
