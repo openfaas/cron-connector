@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
+	"github.com/openfaas/faas/gateway/requests"
 	cfunction "github.com/zeerorg/cron-connector/types"
 )
 
@@ -51,15 +52,14 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 }
 
 func startFunctionProbe(interval time.Duration, topic string, c *types.Controller, cronScheduler *cfunction.Scheduler, invoker *types.Invoker) error {
-	cFs := make(cfunction.CronFunctions, 0)
+	runningFuncs := make(cfunction.ScheduledFunctions, 0)
 	lookupBuilder := cfunction.FunctionLookupBuilder{
 		GatewayURL:  c.Config.GatewayURL,
 		Client:      types.MakeClient(c.Config.UpstreamTimeout),
 		Credentials: c.Credentials,
 	}
-	ticker := time.NewTicker(interval)
-	jobEntries := make(map[string]cfunction.EntryID)
 
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
@@ -70,44 +70,76 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 			return errors.New(fmt.Sprint("Couldn't fetch Functions due to: ", err))
 		}
 
-		newCFs := make(cfunction.CronFunctions, 0)
+		newCronFunctions := RequestsToCronFunctions(functions, topic)
+		addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, runningFuncs)
 
-		for _, function := range functions {
-			cF, err := cfunction.ToCronFunction(&function, topic)
+		for _, function := range deleteFuncs {
+			cronScheduler.Remove(function)
+			log.Print("deleted function ", function.Function.Name)
+		}
 
+		newScheduledFuncs := make(cfunction.ScheduledFunctions, 0)
+
+		for _, function := range addFuncs {
+			f, err := cronScheduler.AddCronFunction(&function, invoker)
 			if err != nil {
-				log.Print(err)
-				continue
+				log.Fatal("could not add function ", function.Name)
 			}
 
-			newCFs = append(newCFs, cF)
-
-			// Schedule new entries
-			if _, ok := jobEntries[cF.Name]; !ok {
-				eID, err := cronScheduler.AddCronFunction(&cF, invoker)
-				log.Print("added new function ", cF.Name)
-
-				if err != nil {
-					return err
-				}
-
-				jobEntries[cF.Name] = eID
-
-				// Update schedule of entries
-			}
+			newScheduledFuncs = append(newScheduledFuncs, f)
+			log.Print("added function ", function.Name)
 		}
 
-		log.Print("Functions are ", newCFs)
-
-		// Delete old entries
-		for _, f := range cFs {
-			if !newCFs.Contains(&f) {
-				cronScheduler.Remove(jobEntries[f.Name])
-				log.Print("deleted function ", f.Name)
-				delete(jobEntries, f.Name)
-			}
-		}
-
-		cFs = newCFs
+		runningFuncs = UpdateScheduledFunctions(runningFuncs, newScheduledFuncs, deleteFuncs)
 	}
+}
+
+// RequestsToCronFunctions converts an array of requests.Function object to CronFunction, ignoring those that cannot be converted
+func RequestsToCronFunctions(functions []requests.Function, topic string) cfunction.CronFunctions {
+	newCronFuncs := make(cfunction.CronFunctions, 0)
+	for _, function := range functions {
+		cF, err := cfunction.ToCronFunction(&function, topic)
+		if err != nil {
+			continue
+		}
+		newCronFuncs = append(newCronFuncs, cF)
+	}
+	return newCronFuncs
+}
+
+// GetNewAndDeleteFuncs takes new functions and running cron functions and returns functions that need to be added and that need to be deleted
+func GetNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.ScheduledFunctions) (cfunction.CronFunctions, cfunction.ScheduledFunctions) {
+	addFuncs := make(cfunction.CronFunctions, 0)
+	deleteFuncs := make(cfunction.ScheduledFunctions, 0)
+
+	for _, function := range newFuncs {
+		if !oldFuncs.Contains(&function) {
+			addFuncs = append(addFuncs, function)
+		}
+	}
+
+	for _, function := range oldFuncs {
+		if !newFuncs.Contains(&function.Function) {
+			deleteFuncs = append(deleteFuncs, function)
+		}
+	}
+
+	return addFuncs, deleteFuncs
+}
+
+// UpdateScheduledFunctions updates the scheduled function with added functions and removes deleted functions
+func UpdateScheduledFunctions(running, added, deleted cfunction.ScheduledFunctions) cfunction.ScheduledFunctions {
+	updatedSchedule := make(cfunction.ScheduledFunctions, 0)
+
+	for _, function := range running {
+		if !deleted.Contains(&function.Function) {
+			updatedSchedule = append(updatedSchedule, function)
+		}
+	}
+
+	for _, function := range added {
+		updatedSchedule = append(updatedSchedule, function)
+	}
+
+	return updatedSchedule
 }
