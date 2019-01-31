@@ -2,9 +2,10 @@ FROM golang:1.10.4 as builder
 RUN mkdir -p /go/src/github.com/zeerorg/cron-connector
 WORKDIR /go/src/github.com/zeerorg/cron-connector
 
-COPY vendor     vendor
-COPY types      types
-COPY main.go    .
+COPY vendor       vendor
+COPY types        types
+COPY main_test.go .
+COPY main.go      .
 
 # Run a gofmt and exclude all vendored code.
 RUN test -z "$(gofmt -l $(find . -type f -name '*.go' -not -path "./vendor/*"))"

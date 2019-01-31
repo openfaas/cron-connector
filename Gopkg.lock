@@ -47,6 +47,7 @@
   input-imports = [
     "github.com/openfaas-incubator/connector-sdk/types",
     "github.com/openfaas/faas/gateway/requests",
+    "github.com/pkg/errors",
     "gopkg.in/robfig/cron.v2",
   ]
   solver-name = "gps-cdcl"
