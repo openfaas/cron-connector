@@ -1,5 +1,6 @@
 # sudo for docker
 sudo: true
+dist: xenial
 
 language: go
 
@@ -15,18 +16,13 @@ services:
 git:
   depth: 1
 
-# install qemu-user before running docker build
-before_install:
-  - sudo apt-get install qemu binfmt-support qemu-user-static -y
-
 # Skip the install step. Don't `go get` dependencies. Only build with the code
 # in vendor/
 install: true
 
 script:
-  - docker run --rm --privileged multiarch/qemu-user-static:register --reset
   - docker build .
-  - docker build -f Dockerfile.armhf .
+  - bash ./travis/deploy.sh
 
 deploy:
   provider: script
