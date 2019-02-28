@@ -1,4 +1,4 @@
-# A Cron Connector for OpenFaaS
+ser# A Cron Connector for OpenFaaS
 
 This is a cron event connector for OpenFaaS. This was built to provide a timer interface to trigger OpenFaaS functions.
 
@@ -6,21 +6,16 @@ This is a cron event connector for OpenFaaS. This was built to provide a timer i
 
 You need to have OpenFaaS deployed first, see [https://docs.openfaas.com](https://docs.openfaas.com) to get started
 
+Works with both armd64 and armhf (Raspberry Pi).
+
 1. For Docker Swarm: 
 ```
 curl -s https://raw.githubusercontent.com/zeerorg/cron-connector/master/yaml/docker-compose.yml | docker stack deploy func -c -
 ```
-2. For Docker Swarm on Raspberry Pi: 
-```
-curl -s https://raw.githubusercontent.com/zeerorg/cron-connector/master/yaml/docker-compose.armhf.yml | docker stack deploy func -c -
-```
-3. For Kubernetes:
+
+2. For Kubernetes:
 ```
 curl -s https://raw.githubusercontent.com/zeerorg/cron-connector/master/yaml/kubernetes/connector-dep.yml | kubectl create --namespace openfaas -f -
-```
-4. For Kubernetes on Raspberry Pi: 
-```
-curl -s https://raw.githubusercontent.com/zeerorg/cron-connector/master/yaml/kubernetes-armhf/connector-dep.yml | kubectl create --namespace openfaas -f -
 ```
 
 ## Adding function
