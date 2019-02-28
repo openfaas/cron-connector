@@ -1,5 +1,6 @@
 # sudo for docker
 sudo: true
+dist: xenial
 
 language: go
 
@@ -11,22 +12,29 @@ go:
 services:
   - docker
 
+addons:
+  apt:
+    packages:
+      - docker-ce
+
 # Only clone the most recent commit.
 git:
   depth: 1
 
 # install qemu-user before running docker build
 before_install:
-  - sudo apt-get install qemu binfmt-support qemu-user-static -y
+  - sudo docker run --privileged linuxkit/binfmt:v0.6
+  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform linux/armhf
+  - sudo docker cp buildkit:/usr/bin/buildctl /usr/bin/
+  - export BUILDKIT_HOST=tcp://0.0.0.0:1234
+
 
 # Skip the install step. Don't `go get` dependencies. Only build with the code
 # in vendor/
 install: true
 
 script:
-  - docker run --rm --privileged multiarch/qemu-user-static:register --reset
-  - docker build .
-  - docker build -f Dockerfile.armhf .
+  - bash ./travis/build.sh
 
 deploy:
   provider: script
