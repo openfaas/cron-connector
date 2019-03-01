@@ -1,4 +1,4 @@
-ser# A Cron Connector for OpenFaaS
+# A Cron Connector for OpenFaaS
 
 This is a cron event connector for OpenFaaS. This was built to provide a timer interface to trigger OpenFaaS functions.
 
