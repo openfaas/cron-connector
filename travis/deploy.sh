@@ -3,36 +3,45 @@
 # Login into docker
 docker login --username $DOCKER_USER --password $DOCKER_PASSWORD
 
-# Build for amd64 and push
+architectures="arm arm64 amd64"
+images=""
+platforms=""
+
+for arch in $architectures
+do
+# Build for all architectures and push manifest
+  platforms="linux/$arch,$platforms"
+done
+
+platforms=${platforms::-1}
+
+
+# Push multi-arch image
 buildctl build --frontend dockerfile.v0 \
-            --local dockerfile=. \
-            --local context=. \
-            --exporter image \
-            --exporter-opt name=docker.io/zeerorg/cron-connector:${TRAVIS_TAG}-amd64 \
-            --exporter-opt push=true \
-            --frontend-opt platform=linux/amd64 \
-            --frontend-opt filename=./Dockerfile
+      --local dockerfile=. \
+      --local context=. \
+      --exporter image \
+      --exporter-opt name=docker.io/zeerorg/cron-connector:$TRAVIS_TAG \
+      --exporter-opt push=true \
+      --frontend-opt platform=$platforms \
+      --frontend-opt filename=./Dockerfile.cross
 
+# Push image for every arch with arch prefix in tag
+for arch in $architectures
+do
+# Build for all architectures and push manifest
+  buildctl build --frontend dockerfile.v0 \
+      --local dockerfile=. \
+      --local context=. \
+      --exporter image \
+      --exporter-opt name=docker.io/zeerorg/cron-connector:$TRAVIS_TAG-$arch \
+      --exporter-opt push=true \
+      --frontend-opt platform=linux/$arch \
+      --frontend-opt filename=./Dockerfile.cross &
+done
 
-# Build for armhf and push
-buildctl build --frontend dockerfile.v0 \
-            --local dockerfile=. \
-            --local context=. \
-            --exporter image \
-            --exporter-opt name=docker.io/zeerorg/cron-connector:${TRAVIS_TAG}-arm \
-            --exporter-opt push=true \
-            --frontend-opt platform=linux/armhf \
-            --frontend-opt filename=./Dockerfile.armhf
+wait
 
-
-export DOCKER_CLI_EXPERIMENTAL=enabled
-
-# Create manifest list and push that
-docker manifest create zeerorg/cron-connector:${TRAVIS_TAG} \
-            zeerorg/cron-connector:${TRAVIS_TAG}-amd64 \
-            zeerorg/cron-connector:${TRAVIS_TAG}-arm
-
-docker manifest annotate zeerorg/cron-connector:${TRAVIS_TAG} zeerorg/cron-connector:${TRAVIS_TAG}-arm --arch arm
-docker manifest annotate zeerorg/cron-connector:${TRAVIS_TAG} zeerorg/cron-connector:${TRAVIS_TAG}-amd64 --arch amd64
-
-docker manifest push zeerorg/cron-connector:${TRAVIS_TAG}
+docker pull zeerorg/cron-connector:$TRAVIS_TAG-arm
+docker tag zeerorg/cron-connector:$TRAVIS_TAG-arm zeerorg/cron-connector:$TRAVIS_TAG-armhf
+docker push zeerorg/cron-connector:$TRAVIS_TAG-armhf
