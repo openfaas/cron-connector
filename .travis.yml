@@ -34,11 +34,11 @@ before_install:
 install: true
 
 script:
-  - bash ./travis/build.sh
+  - bash ./travis/build-deploy.sh
 
 deploy:
   provider: script
-  script: bash ./travis/deploy.sh
+  script: bash ./travis/build-deploy.sh
   skip_cleanup: true
   on:
     tags: true
