@@ -5,19 +5,21 @@ package main
 import (
 	"testing"
 
+	"github.com/openfaas/faas/gateway/requests"
 	cfunction "github.com/zeerorg/cron-connector/types"
 )
 
 func TestGetNewAndDeleteFuncs(t *testing.T) {
 	newCronFunctions := make(cfunction.CronFunctions, 3)
-	newCronFunctions[0] = cfunction.CronFunction{FuncData: nil, Name: "test_function_unchanged", Schedule: "* * * * *"}
-	newCronFunctions[1] = cfunction.CronFunction{FuncData: nil, Name: "test_function_to_add", Schedule: "* * * * *"}
-	newCronFunctions[1] = cfunction.CronFunction{FuncData: nil, Name: "test_function_to_update", Schedule: "*/5 * * * *"}
+	defaultReq := requests.Function{}
+	newCronFunctions[0] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_unchanged", Schedule: "* * * * *"}
+	newCronFunctions[1] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_add", Schedule: "* * * * *"}
+	newCronFunctions[1] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_update", Schedule: "*/5 * * * *"}
 
 	oldFuncs := make(cfunction.ScheduledFunctions, 3)
-	oldFuncs[0] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: nil, Name: "test_function_unchanged", Schedule: "* * * * *"}, ID: 0}
-	oldFuncs[1] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: nil, Name: "test_function_to_delete", Schedule: "* * * * *"}, ID: 0}
-	oldFuncs[2] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: nil, Name: "test_function_to_update", Schedule: "* * * * *"}, ID: 0}
+	oldFuncs[0] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_unchanged", Schedule: "* * * * *"}, ID: 0}
+	oldFuncs[1] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_delete", Schedule: "* * * * *"}, ID: 0}
+	oldFuncs[2] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_update", Schedule: "* * * * *"}, ID: 0}
 
 	addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, oldFuncs)
 	if !deleteFuncs.Contains(&oldFuncs[1].Function) {
