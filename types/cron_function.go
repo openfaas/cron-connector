@@ -17,7 +17,7 @@ import (
 
 // CronFunction depicts an OpenFaaS function which is invoked by cron
 type CronFunction struct {
-	FuncData *requests.Function
+	FuncData requests.Function
 	Name     string
 	Schedule string
 }
@@ -40,7 +40,7 @@ func (c *CronFunctions) Contains(cF *CronFunction) bool {
 }
 
 // ToCronFunction converts a requests.Function object to the CronFunction and returns error if it is not possible
-func ToCronFunction(f *requests.Function, topic string) (CronFunction, error) {
+func ToCronFunction(f requests.Function, topic string) (CronFunction, error) {
 	if f.Annotations == nil {
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has no annotations."))
 	}

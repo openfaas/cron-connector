@@ -97,7 +97,7 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 func RequestsToCronFunctions(functions []requests.Function, topic string) cfunction.CronFunctions {
 	newCronFuncs := make(cfunction.CronFunctions, 0)
 	for _, function := range functions {
-		cF, err := cfunction.ToCronFunction(&function, topic)
+		cF, err := cfunction.ToCronFunction(function, topic)
 		if err != nil {
 			continue
 		}
