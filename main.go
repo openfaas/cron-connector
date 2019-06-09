@@ -80,7 +80,7 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 		newScheduledFuncs := make(cfunction.ScheduledFunctions, 0)
 
 		for _, function := range addFuncs {
-			f, err := cronScheduler.AddCronFunction(&function, invoker)
+			f, err := cronScheduler.AddCronFunction(function, invoker)
 			if err != nil {
 				log.Fatal("could not add function ", function.Name)
 			}

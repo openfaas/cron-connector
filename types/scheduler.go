@@ -33,12 +33,12 @@ type ScheduledFunction struct {
 type ScheduledFunctions []ScheduledFunction
 
 // AddCronFunction adds a function to cron
-func (s *Scheduler) AddCronFunction(c *CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
+func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
 	eID, err := s.main.AddFunc(c.Schedule, func() {
 		log.Print(fmt.Sprint("Executed function: ", c.Name))
 		c.InvokeFunction(invoker)
 	})
-	return ScheduledFunction{*c, EntryID(eID)}, err
+	return ScheduledFunction{c, EntryID(eID)}, err
 }
 
 // NewScheduler returns a scheduler
