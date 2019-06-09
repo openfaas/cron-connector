@@ -35,6 +35,7 @@ install: true
 
 script:
   - bash ./travis/build.sh
+  - bash ./travis/test.sh
 
 deploy:
   provider: script

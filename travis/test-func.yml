@@ -1,0 +1,21 @@
+provider:
+  name: openfaas
+  gateway: http://127.0.0.1:8080
+functions:
+  nodeinfo-1:
+    image: functions/nodeinfo:latest
+    annotations:
+      topic: cron-function
+      schedule: "* * * * *"
+  nodeinfo-2:
+    image: functions/nodeinfo:latest
+    annotations:
+      topic: cron-function
+      schedule: "* * * * *"
+  nodeinfo-3:
+    image: functions/nodeinfo:latest
+    annotations:
+      topic: cron-function
+      schedule: "* * * * *"
+  nodeinfo-4:
+    image: functions/nodeinfo:latest
