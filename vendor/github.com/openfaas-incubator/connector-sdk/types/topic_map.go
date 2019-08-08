@@ -9,18 +9,18 @@ func NewTopicMap() TopicMap {
 	lookup := make(map[string][]string)
 	return TopicMap{
 		lookup: &lookup,
-		lock:   sync.Mutex{},
+		lock:   sync.RWMutex{},
 	}
 }
 
 type TopicMap struct {
 	lookup *map[string][]string
-	lock   sync.Mutex
+	lock   sync.RWMutex
 }
 
 func (t *TopicMap) Match(topicName string) []string {
-	t.lock.Lock()
-	defer t.lock.Unlock()
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 
 	var values []string
 
@@ -39,4 +39,16 @@ func (t *TopicMap) Sync(updated *map[string][]string) {
 	defer t.lock.Unlock()
 
 	t.lookup = updated
+}
+
+func (t *TopicMap) Topics() []string {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+
+	topics := make([]string, 0, len(*t.lookup))
+	for topic := range *t.lookup {
+		topics = append(topics, topic)
+	}
+
+	return topics
 }

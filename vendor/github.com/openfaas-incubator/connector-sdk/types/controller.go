@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -24,6 +25,12 @@ type ControllerConfig struct {
 
 	// RebuildInterval the interval at which the topic map is rebuilt
 	RebuildInterval time.Duration
+
+	// TopicAnnotationDelimiter defines the character upon which to split the Topic annotation value
+	TopicAnnotationDelimiter string
+
+	// AsyncFunctionInvocation if true points to the asynchronous function route
+	AsyncFunctionInvocation bool
 }
 
 // Controller for the connector SDK
@@ -52,7 +59,9 @@ type Controller struct {
 // NewController create a new connector SDK controller
 func NewController(credentials *auth.BasicAuthCredentials, config *ControllerConfig) *Controller {
 
-	invoker := NewInvoker(config.GatewayURL,
+	gatewayFunctionPath := gatewayRoute(config)
+
+	invoker := NewInvoker(gatewayFunctionPath,
 		MakeClient(config.UpstreamTimeout),
 		config.PrintResponse)
 
@@ -110,9 +119,10 @@ func (c *Controller) Invoke(topic string, message *[]byte) {
 func (c *Controller) BeginMapBuilder() {
 
 	lookupBuilder := FunctionLookupBuilder{
-		GatewayURL:  c.Config.GatewayURL,
-		Client:      MakeClient(c.Config.UpstreamTimeout),
-		Credentials: c.Credentials,
+		GatewayURL:     c.Config.GatewayURL,
+		Client:         MakeClient(c.Config.UpstreamTimeout),
+		Credentials:    c.Credentials,
+		TopicDelimiter: c.Config.TopicAnnotationDelimiter,
 	}
 
 	ticker := time.NewTicker(c.Config.RebuildInterval)
@@ -133,4 +143,17 @@ func synchronizeLookups(ticker *time.Ticker,
 		log.Println("Syncing topic map")
 		topicMap.Sync(&lookups)
 	}
+}
+
+// Topics gets the list of topics that functions have indicated should
+// be used as triggers.
+func (c *Controller) Topics() []string {
+	return c.TopicMap.Topics()
+}
+
+func gatewayRoute(config *ControllerConfig) string {
+	if config.AsyncFunctionInvocation == true {
+		return fmt.Sprintf("%s/%s", config.GatewayURL, "async-function")
+	}
+	return fmt.Sprintf("%s/%s", config.GatewayURL, "function")
 }
