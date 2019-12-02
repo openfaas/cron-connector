@@ -1,6 +1,8 @@
 # A Cron Connector for OpenFaaS
 
-This is a cron event connector for OpenFaaS. This was built to provide a timer interface to trigger OpenFaaS functions. Also checkout [OpenFaas docs on cron](https://docs.openfaas.com/reference/cron/) for other methods on how you can run functions triggered by cron.
+This is a cron event connector for OpenFaaS. This was built to provide a timer interface to trigger OpenFaaS functions. Also checkout [OpenFaaS docs on cron](https://docs.openfaas.com/reference/cron/) for other methods on how you can run functions triggered by cron.
+
+This project was forked from [zeerorg/cron-connector](https://github.com/zeerorg/cron-connector) to enable prompt updates and patches for end-users.
 
 ## How to Use
 
@@ -39,3 +41,7 @@ functions:
 You can learn how to create and test the [Cron syntax here](https://crontab.guru/every-5-minutes).
 
 See the full example here: [sample/stack.yml](sample/stack.yml)
+
+## Helm
+
+The helm chart is available in the [faas-netes](https://github.com/openfaas/faas-netes/tree/master/chart/cron-connector) repo.
