@@ -1,5 +1,5 @@
 
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -8,6 +8,9 @@ metadata:
   name: sample-connector
   namespace: openfaas
 spec:
+  selector:
+    matchLabels:
+      app: connector
   replicas: 1
   template:
     metadata:
