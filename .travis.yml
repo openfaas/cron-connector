@@ -1,49 +1,20 @@
-# sudo for docker
-sudo: true
-dist: xenial
-
+sudo: required
 language: go
 
-# You don't need to test on very old version of the Go compiler. It's the user's
-# responsibility to keep their compilers up to date.
 go:
-  - 1.10.4
+- "1.11"
 
 services:
-  - docker
-
-addons:
-  apt:
-    packages:
-      - docker-ce
-
-# Only clone the most recent commit.
-git:
-  depth: 1
-
-# install qemu-user before running docker build
-before_install:
-  - sudo docker run --privileged linuxkit/binfmt:v0.6
-  - sudo docker run -d --privileged -p 1234:1234 --name buildkit moby/buildkit:latest --addr tcp://0.0.0.0:1234 --oci-worker-platform linux/amd64 --oci-worker-platform linux/armhf --oci-worker-platform linux/arm64
-  - sudo docker cp buildkit:/usr/bin/buildctl /usr/bin/
-  - export BUILDKIT_HOST=tcp://0.0.0.0:1234
-
-
-# Skip the install step. Don't `go get` dependencies. Only build with the code
-# in vendor/
-install: true
+- docker
 
 script:
-  - bash ./travis/build.sh
-  - bash ./travis/test.sh
+- TAG=${TRAVIS_TAG:=latest} make build
+
+before_deploy:
+- echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
 
 deploy:
   provider: script
-  script: bash ./travis/deploy.sh
-  skip_cleanup: true
+  script: TAG=${TRAVIS_TAG} make push manifest
   on:
     tags: true
-
-# Don't email me the results of the test runs.
-notifications:
-  email: false
