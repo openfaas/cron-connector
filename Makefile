@@ -6,23 +6,23 @@ TAG?=latest
 export DOCKER_CLI_EXPERIMENTAL=enabled
 
 build:
-	docker build -t openfaas-incubator/cron-connector:$(TAG)-amd64 . -f Dockerfile
-	docker build --build-arg OPTS="GOARCH=arm64" -t openfaas-incubator/cron-connector:$(TAG)-arm64 . -f Dockerfile
-	docker build --build-arg OPTS="GOARCH=arm GOARM=6" -t openfaas-incubator/cron-connector:$(TAG)-armhf . -f Dockerfile
+	docker build -t openfaas/cron-connector:$(TAG)-amd64 . -f Dockerfile
+	docker build --build-arg OPTS="GOARCH=arm64" -t openfaas/cron-connector:$(TAG)-arm64 . -f Dockerfile
+	docker build --build-arg OPTS="GOARCH=arm GOARM=6" -t openfaas/cron-connector:$(TAG)-armhf . -f Dockerfile
 
 push:
-	docker push openfaas-incubator/cron-connector:$(TAG)-amd64
-	docker push openfaas-incubator/cron-connector:$(TAG)-arm64
-	docker push openfaas-incubator/cron-connector:$(TAG)-armhf
+	docker push openfaas/cron-connector:$(TAG)-amd64
+	docker push openfaas/cron-connector:$(TAG)-arm64
+	docker push openfaas/cron-connector:$(TAG)-armhf
 
 manifest:
-	docker manifest create --amend openfaas-incubator/cron-connector:$(TAG) \
-		openfaas-incubator/cron-connector:$(TAG)-amd64 \
-		openfaas-incubator/cron-connector:$(TAG)-arm64 \
-		openfaas-incubator/cron-connector:$(TAG)-armhf
-	docker manifest annotate openfaas-incubator/cron-connector:$(TAG) openfaas-incubator/cron-connector:$(TAG)-arm64 --os linux --arch arm64
-	docker manifest annotate openfaas-incubator/cron-connector:$(TAG) openfaas-incubator/cron-connector:$(TAG)-armhf --os linux --arch arm --variant v6
-	docker manifest push -p openfaas-incubator/cron-connector:$(TAG)
+	docker manifest create --amend openfaas/cron-connector:$(TAG) \
+		openfaas/cron-connector:$(TAG)-amd64 \
+		openfaas/cron-connector:$(TAG)-arm64 \
+		openfaas/cron-connector:$(TAG)-armhf
+	docker manifest annotate openfaas/cron-connector:$(TAG) openfaas/cron-connector:$(TAG)-arm64 --os linux --arch arm64
+	docker manifest annotate openfaas/cron-connector:$(TAG) openfaas/cron-connector:$(TAG)-armhf --os linux --arch arm --variant v6
+	docker manifest push -p openfaas/cron-connector:$(TAG)
 
 test:
 	go test ./...
