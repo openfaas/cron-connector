@@ -2,13 +2,13 @@
 
 This is a cron event connector for OpenFaaS. This was built to provide a timer interface to trigger OpenFaaS functions. Also checkout [OpenFaaS docs on cron](https://docs.openfaas.com/reference/cron/) for other methods on how you can run functions triggered by cron.
 
-This project was forked from [zeerorg/cron-connector](https://github.com/zeerorg/cron-connector) to enable prompt updates and patches for end-users.
+This project was forked from [zeerorg/cron-connector](https://github.com/openfaas-incubator/cron-connector) to enable prompt updates and patches for end-users.
 
 ## How to Use
 
 You need to have OpenFaaS deployed first, see [https://docs.openfaas.com](https://docs.openfaas.com) to get started
 
-Works with both armd64 and armhf (Raspberry Pi).
+Works with both AMD64 and armhf (Raspberry Pi).
 
 1. For Docker Swarm: 
 ```
@@ -17,7 +17,7 @@ curl -s https://raw.githubusercontent.com/openfaas-incubator/cron-connector/mast
 
 2. For Kubernetes:
 ```
-curl -s https://raw.githubusercontent.com/openfaas-incubator/cron-connector/master/yaml/kubernetes/connector-dep.yml | kubectl create --namespace openfaas -f -
+curl -s https://raw.githubusercontent.com/openfaas-incubator/cron-connector/master/yaml/kubernetes/connector-dep.yml | kubectl apply -f - 
 ```
 
 ## Adding function

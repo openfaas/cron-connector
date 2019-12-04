@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
+	cfunction "github.com/openfaas-incubator/cron-connector/types"
 	"github.com/openfaas/faas/gateway/requests"
-	cfunction "github.com/zeerorg/cron-connector/types"
 )
 
 func main() {

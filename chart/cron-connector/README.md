@@ -1,7 +1,7 @@
 # Using helm chart for deployment
 
 ```bash
-git clone https://github.com/zeerorg/cron-connector.git
+git clone https://github.com/openfaas-incubator/cron-connector.git
 
 cd cron-connector
 

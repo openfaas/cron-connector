@@ -5,8 +5,8 @@ package main
 import (
 	"testing"
 
+	cfunction "github.com/openfaas-incubator/cron-connector/types"
 	"github.com/openfaas/faas/gateway/requests"
-	cfunction "github.com/zeerorg/cron-connector/types"
 )
 
 func TestGetNewAndDeleteFuncs(t *testing.T) {

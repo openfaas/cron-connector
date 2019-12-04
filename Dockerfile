@@ -1,31 +1,36 @@
-FROM golang:1.10.4 as builder
-RUN mkdir -p /go/src/github.com/zeerorg/cron-connector
-WORKDIR /go/src/github.com/zeerorg/cron-connector
+FROM golang:1.11
 
-COPY vendor       vendor
-COPY types        types
-COPY main_test.go .
-COPY main.go      .
+RUN mkdir -p /go/src/github.com/openfaas-incubator/cron-connector/
 
-# Run a gofmt and exclude all vendored code.
-RUN test -z "$(gofmt -l $(find . -type f -name '*.go' -not -path "./vendor/*"))"
+WORKDIR /go/src/github.com/openfaas-incubator/cron-connector
 
-RUN go test -v ./...
+COPY . .
 
-# Stripping via -ldflags "-s -w" 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -ldflags "-s -w" -installsuffix cgo -o ./connector
+ARG OPTS
 
-FROM alpine:3.8
+RUN gofmt -l -d $(find . -type f -name '*.go' -not -path "./vendor/*") && \
+  go test -v ./ && \
+  VERSION=$(git describe --all --exact-match `git rev-parse HEAD` | grep tags | sed 's/tags\///') && \
+  GIT_COMMIT=$(git rev-list -1 HEAD) && \
+  env ${OPTS} CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w \
+  -X github.com/openfaas-incubator/cron-connector/pkg/version.Release=${VERSION} \
+  -X github.com/openfaas-incubator/cron-connector/pkg/version.SHA=${GIT_COMMIT}" \
+  -a -installsuffix cgo -o cron-connector . && \
+  addgroup --system app && \
+  adduser --system --ingroup app app && \
+  mkdir /scratch-tmp
 
-RUN addgroup -S app \
-    && adduser -S -g app app
+# we can't add user in next stage because it's from scratch
+# ca-certificates and tmp folder are also missing in scratch
+# so we add all of it here and copy files in next stage
 
-WORKDIR /home/app
+FROM scratch
 
-COPY --from=builder /go/src/github.com/zeerorg/cron-connector/    .
-
-RUN chown -R app:app ./
+COPY --from=0 /etc/passwd /etc/group /etc/
+COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+COPY --from=0 --chown=app:app /scratch-tmp /tmp/
+COPY --from=0 /go/src/github.com/openfaas-incubator/cron-connector/cron-connector .
 
 USER app
 
-CMD ["./connector"]
+ENTRYPOINT ["./cron-connector"]
