@@ -29,6 +29,14 @@ The function should have 2 annotations:
 
 For example, we may have a function "nodeinfo" which we want to invoke every 5 minutes:
 
+Deploy via the CLI:
+
+```
+faas-cli store deploy nodeinfo --annotation schedule="*/5 * * * *" --annotation topic=cron-function
+```
+
+Or via `stack.yml`:
+
 ```yaml
 functions:
   nodeinfo:
