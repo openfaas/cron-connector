@@ -5,7 +5,7 @@ metadata:
   labels:
     app: connector
     component: cron-connector
-  name: sample-connector
+  name: cron-connector
   namespace: openfaas
 spec:
   selector:
@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
       - name: cron-connector
-        image: zeerorg/cron-connector:v0.2.2
+        image: openfaas/cron-connector:latest
         env:
           - name: gateway_url
             value: "http://gateway.openfaas:8080"
