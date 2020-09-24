@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/openfaas/connector-sdk/types"
 	ptypes "github.com/openfaas/faas-provider/types"
@@ -21,6 +22,7 @@ type CronFunction struct {
 	Name      string
 	Namespace string
 	Schedule  string
+	Async     bool
 }
 
 // CronFunctions a list of CronFunction
@@ -31,7 +33,7 @@ func (c *CronFunctions) Contains(cF *CronFunction) bool {
 
 	for _, f := range *c {
 
-		if f.Name == cF.Name && f.Namespace == cF.Namespace && f.Schedule == cF.Schedule {
+		if f.Name == cF.Name && f.Namespace == cF.Namespace && f.Schedule == cF.Schedule && f.Async == cF.Async {
 			return true
 		}
 
@@ -45,8 +47,14 @@ func ToCronFunction(f ptypes.FunctionStatus, namespace string, topic string) (Cr
 	if f.Annotations == nil {
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has no annotations."))
 	}
+
 	fTopic := (*f.Annotations)["topic"]
 	fSchedule := (*f.Annotations)["schedule"]
+	fAsync := (*f.Annotations)["async"]
+
+	if fAsync != "true" {
+		fAsync = "false"
+	}
 
 	if fTopic != topic {
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has wrong topic: ", fTopic))
@@ -56,17 +64,25 @@ func ToCronFunction(f ptypes.FunctionStatus, namespace string, topic string) (Cr
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has wrong cron schedule: ", fSchedule))
 	}
 
+	if fAsync != "true" && fAsync != "false" {
+		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has invalid async value: ", fAsync))
+	}
+
 	var c CronFunction
 	c.FuncData = f
 	c.Name = f.Name
 	c.Namespace = namespace
 	c.Schedule = fSchedule
+	c.Async, _ = strconv.ParseBool(fAsync)
 	return c, nil
 }
 
 // InvokeFunction Invokes the cron function
 func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 	gwURL := fmt.Sprintf("%s/function/%s.%s", i.GatewayURL, c.Name, c.Namespace)
+	if c.Async {
+		gwURL = fmt.Sprintf("%s/async-function/%s.%s", i.GatewayURL, c.Name, c.Namespace)
+	}
 	reader := bytes.NewReader(make([]byte, 0))
 	httpReq, _ := http.NewRequest(http.MethodPost, gwURL, reader)
 

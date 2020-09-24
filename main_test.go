@@ -68,3 +68,29 @@ func TestNamespaceFuncs(t *testing.T) {
 		t.Error("function should be left as it is")
 	}
 }
+
+func TestAsyncFuncs(t *testing.T) {
+	newCronFunctions := make(cfunction.CronFunctions, 3)
+	defaultReq := ptypes.FunctionStatus{}
+	newCronFunctions[0] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_async_one", Namespace: "openfaas-fn", Schedule: "* * * * *"}
+	newCronFunctions[1] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_async_two", Namespace: "openfaas-fn", Schedule: "* * * * *", Async: true}
+	newCronFunctions[2] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_async_three", Namespace: "openfaas-fn", Schedule: "* * * * *", Async: true}
+
+	oldFuncs := make(cfunction.ScheduledFunctions, 3)
+	oldFuncs[0] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_async_one", Namespace: "openfaas-fn", Schedule: "* * * * *"}, ID: 0}
+	oldFuncs[1] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_async_two", Namespace: "openfaas-fn", Schedule: "* * * * *", Async: false}, ID: 0}
+	oldFuncs[1] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_async_three", Namespace: "openfaas-fn", Schedule: "* * * * *", Async: true}, ID: 0}
+
+	addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, oldFuncs, "openfaas-fn")
+	if !deleteFuncs.Contains(&oldFuncs[1].Function) && !addFuncs.Contains(&newCronFunctions[1]) {
+		t.Error("function will not be updated")
+	}
+
+	if addFuncs.Contains(&newCronFunctions[0]) || deleteFuncs.Contains(&newCronFunctions[0]) {
+		t.Error("function should be left as it is")
+	}
+
+	if addFuncs.Contains(&newCronFunctions[2]) || deleteFuncs.Contains(&newCronFunctions[2]) {
+		t.Error("function should be left as it is")
+	}
+}

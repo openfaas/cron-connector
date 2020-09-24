@@ -46,13 +46,14 @@ The function should have 2 annotations:
 
 1. `topic` annotation should be `cron-function`.
 2. `schedule` annotation should be the cron schedule on which to invoke function
+3. `async` annotation defines async invocation (`true` or `false`) - default `false`
 
 For example, we may have a function "nodeinfo" which we want to invoke every 5 minutes:
 
 Deploy via the CLI:
 
 ```
-faas-cli store deploy nodeinfo --annotation schedule="*/5 * * * *" --annotation topic=cron-function
+faas-cli store deploy nodeinfo --annotation schedule="*/5 * * * *" --annotation topic=cron-function -annotation async="true"
 ```
 
 Or via `stack.yml`:
@@ -64,6 +65,7 @@ functions:
     annotations:
       topic: cron-function
       schedule: "*/5 * * * *"
+      async: "true"
 ```
 
 You can learn how to create and test the [Cron syntax here](https://crontab.guru/every-5-minutes).
