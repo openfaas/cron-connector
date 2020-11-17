@@ -1,10 +1,33 @@
-# github.com/openfaas-incubator/connector-sdk v0.0.0-20190125151851-d722c9f72ad0
+# github.com/drone/envsubst v1.0.2
+github.com/drone/envsubst
+github.com/drone/envsubst/parse
+github.com/drone/envsubst/path
+# github.com/mitchellh/go-homedir v1.1.0
+github.com/mitchellh/go-homedir
+# github.com/openfaas-incubator/connector-sdk v0.0.0-20200902074656-7f648543d4aa
+## explicit
 github.com/openfaas-incubator/connector-sdk/types
-# github.com/openfaas/faas v0.0.0-20190104165101-a65df4795bc6
+# github.com/openfaas/faas v0.0.0-20200422142642-18f6c720b50d
 github.com/openfaas/faas/gateway/requests
-# github.com/openfaas/faas-provider v0.0.0-20181216160432-220324e98f5d
+# github.com/openfaas/faas-cli v0.0.0-20201119120128-c9d284d0c5bd
+## explicit
+github.com/openfaas/faas-cli/config
+github.com/openfaas/faas-cli/proxy
+github.com/openfaas/faas-cli/schema/store/v2
+github.com/openfaas/faas-cli/stack
+# github.com/openfaas/faas-provider v0.15.1
+## explicit
 github.com/openfaas/faas-provider/auth
-# github.com/pkg/errors v0.8.1
+github.com/openfaas/faas-provider/httputil
+github.com/openfaas/faas-provider/logs
+github.com/openfaas/faas-provider/types
+# github.com/pkg/errors v0.9.1
+## explicit
 github.com/pkg/errors
 # github.com/robfig/cron/v3 v3.0.0
+## explicit
 github.com/robfig/cron/v3
+# github.com/ryanuber/go-glob v1.0.0
+github.com/ryanuber/go-glob
+# gopkg.in/yaml.v2 v2.2.8
+gopkg.in/yaml.v2

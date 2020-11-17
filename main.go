@@ -4,22 +4,22 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
 	cfunction "github.com/openfaas/cron-connector/types"
 	"github.com/openfaas/cron-connector/version"
-	"github.com/openfaas/faas/gateway/requests"
+	sdk "github.com/openfaas/faas-cli/proxy"
+	ptypes "github.com/openfaas/faas-provider/types"
 )
 
 func main() {
-	creds := types.GetCredentials()
 	config, err := getControllerConfig()
-
 	if err != nil {
 		panic(err)
 	}
@@ -27,13 +27,13 @@ func main() {
 	sha, ver := version.GetReleaseInfo()
 	log.Printf("Version: %s\tCommit: %s", sha, ver)
 
-	controller := types.NewController(creds, config)
+	invoker := types.NewInvoker(config.GatewayURL, types.MakeClient(config.UpstreamTimeout), config.PrintResponse)
 	cronScheduler := cfunction.NewScheduler()
 	topic := "cron-function"
 	interval := time.Second * 10
 
 	cronScheduler.Start()
-	err = startFunctionProbe(interval, topic, controller, cronScheduler, controller.Invoker)
+	err = startFunctionProbe(interval, topic, config, cronScheduler, invoker)
 
 	if err != nil {
 		panic(err)
@@ -44,7 +44,7 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 	gURL, ok := os.LookupEnv("gateway_url")
 
 	if !ok {
-		return nil, errors.New("Gateway URL not set")
+		return nil, fmt.Errorf("Gateway URL not set")
 	}
 
 	return &types.ControllerConfig{
@@ -54,54 +54,79 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 	}, nil
 }
 
-func startFunctionProbe(interval time.Duration, topic string, c *types.Controller, cronScheduler *cfunction.Scheduler, invoker *types.Invoker) error {
+//BasicAuth basic authentication for the the gateway
+type BasicAuth struct {
+	Username string
+	Password string
+}
+
+//Set set Authorization header on request
+func (auth *BasicAuth) Set(req *http.Request) error {
+	req.SetBasicAuth(auth.Username, auth.Password)
+	return nil
+}
+
+func startFunctionProbe(interval time.Duration, topic string, c *types.ControllerConfig, cronScheduler *cfunction.Scheduler, invoker *types.Invoker) error {
 	runningFuncs := make(cfunction.ScheduledFunctions, 0)
-	lookupBuilder := cfunction.FunctionLookupBuilder{
-		GatewayURL:  c.Config.GatewayURL,
-		Client:      types.MakeClient(c.Config.UpstreamTimeout),
-		Credentials: c.Credentials,
+	timeout := 3 * time.Second
+	auth := &BasicAuth{}
+	auth.Username = types.GetCredentials().User
+	auth.Password = types.GetCredentials().Password
+
+	sdkClient, err := sdk.NewClient(auth, c.GatewayURL, nil, &timeout)
+	if err != nil {
+		panic(err)
 	}
+
+	ctx := context.Background()
 
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	for {
 		<-ticker.C
-		functions, err := lookupBuilder.GetFunctions()
 
+		namespaces, err := sdkClient.ListNamespaces(ctx)
 		if err != nil {
-			return errors.New(fmt.Sprint("Couldn't fetch Functions due to: ", err))
+			return fmt.Errorf("Couldn't fetch Namespaces due to: %s", err)
 		}
 
-		newCronFunctions := RequestsToCronFunctions(functions, topic)
-		addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, runningFuncs)
-
-		for _, function := range deleteFuncs {
-			cronScheduler.Remove(function)
-			log.Print("deleted function ", function.Function.Name)
-		}
-
-		newScheduledFuncs := make(cfunction.ScheduledFunctions, 0)
-
-		for _, function := range addFuncs {
-			f, err := cronScheduler.AddCronFunction(function, invoker)
+		for _, namespace := range namespaces {
+			functions, err := sdkClient.ListFunctions(ctx, namespace)
 			if err != nil {
-				log.Fatal("could not add function ", function.Name)
+				return fmt.Errorf("Couldn't fetch Functions due to: %s", err)
 			}
 
-			newScheduledFuncs = append(newScheduledFuncs, f)
-			log.Print("added function ", function.Name)
-		}
+			newCronFunctions := RequestsToCronFunctions(functions, namespace, topic)
+			addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, runningFuncs, namespace)
 
-		runningFuncs = UpdateScheduledFunctions(runningFuncs, newScheduledFuncs, deleteFuncs)
+			for _, function := range deleteFuncs {
+				cronScheduler.Remove(function)
+				log.Print("deleted function ", function.Function.Name, " in ", function.Function.Namespace)
+			}
+
+			newScheduledFuncs := make(cfunction.ScheduledFunctions, 0)
+
+			for _, function := range addFuncs {
+				f, err := cronScheduler.AddCronFunction(function, invoker)
+				if err != nil {
+					log.Fatal("could not add function ", function.Name, " in ", function.Namespace)
+				}
+
+				newScheduledFuncs = append(newScheduledFuncs, f)
+				log.Print("added function ", function.Name, " in ", function.Namespace)
+			}
+
+			runningFuncs = UpdateScheduledFunctions(runningFuncs, newScheduledFuncs, deleteFuncs)
+		}
 	}
 }
 
-// RequestsToCronFunctions converts an array of requests.Function object to CronFunction, ignoring those that cannot be converted
-func RequestsToCronFunctions(functions []requests.Function, topic string) cfunction.CronFunctions {
+// RequestsToCronFunctions converts an array of types.FunctionStatus object to CronFunction, ignoring those that cannot be converted
+func RequestsToCronFunctions(functions []ptypes.FunctionStatus, namespace string, topic string) cfunction.CronFunctions {
 	newCronFuncs := make(cfunction.CronFunctions, 0)
 	for _, function := range functions {
-		cF, err := cfunction.ToCronFunction(function, topic)
+		cF, err := cfunction.ToCronFunction(function, namespace, topic)
 		if err != nil {
 			continue
 		}
@@ -111,7 +136,7 @@ func RequestsToCronFunctions(functions []requests.Function, topic string) cfunct
 }
 
 // GetNewAndDeleteFuncs takes new functions and running cron functions and returns functions that need to be added and that need to be deleted
-func GetNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.ScheduledFunctions) (cfunction.CronFunctions, cfunction.ScheduledFunctions) {
+func GetNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.ScheduledFunctions, namespace string) (cfunction.CronFunctions, cfunction.ScheduledFunctions) {
 	addFuncs := make(cfunction.CronFunctions, 0)
 	deleteFuncs := make(cfunction.ScheduledFunctions, 0)
 
@@ -122,7 +147,7 @@ func GetNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.S
 	}
 
 	for _, function := range oldFuncs {
-		if !newFuncs.Contains(&function.Function) {
+		if !newFuncs.Contains(&function.Function) && function.Function.Namespace == namespace {
 			deleteFuncs = append(deleteFuncs, function)
 		}
 	}

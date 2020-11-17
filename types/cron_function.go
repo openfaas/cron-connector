@@ -11,15 +11,16 @@ import (
 	"net/http"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
-	"github.com/openfaas/faas/gateway/requests"
+	ptypes "github.com/openfaas/faas-provider/types"
 	"github.com/pkg/errors"
 )
 
 // CronFunction depicts an OpenFaaS function which is invoked by cron
 type CronFunction struct {
-	FuncData requests.Function
-	Name     string
-	Schedule string
+	FuncData  ptypes.FunctionStatus
+	Name      string
+	Namespace string
+	Schedule  string
 }
 
 // CronFunctions a list of CronFunction
@@ -30,7 +31,7 @@ func (c *CronFunctions) Contains(cF *CronFunction) bool {
 
 	for _, f := range *c {
 
-		if f.Name == cF.Name && f.Schedule == cF.Schedule {
+		if f.Name == cF.Name && f.Namespace == cF.Namespace && f.Schedule == cF.Schedule {
 			return true
 		}
 
@@ -39,8 +40,8 @@ func (c *CronFunctions) Contains(cF *CronFunction) bool {
 	return false
 }
 
-// ToCronFunction converts a requests.Function object to the CronFunction and returns error if it is not possible
-func ToCronFunction(f requests.Function, topic string) (CronFunction, error) {
+// ToCronFunction converts a ptypes.FunctionStatus object to the CronFunction and returns error if it is not possible
+func ToCronFunction(f ptypes.FunctionStatus, namespace string, topic string) (CronFunction, error) {
 	if f.Annotations == nil {
 		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has no annotations."))
 	}
@@ -58,13 +59,14 @@ func ToCronFunction(f requests.Function, topic string) (CronFunction, error) {
 	var c CronFunction
 	c.FuncData = f
 	c.Name = f.Name
+	c.Namespace = namespace
 	c.Schedule = fSchedule
 	return c, nil
 }
 
 // InvokeFunction Invokes the cron function
 func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
-	gwURL := fmt.Sprintf("%s/function/%s", i.GatewayURL, c.Name)
+	gwURL := fmt.Sprintf("%s/function/%s.%s", i.GatewayURL, c.Name, c.Namespace)
 	reader := bytes.NewReader(make([]byte, 0))
 	httpReq, _ := http.NewRequest(http.MethodPost, gwURL, reader)
 
@@ -77,7 +79,7 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 
 	if doErr != nil {
 		i.Responses <- types.InvokerResponse{
-			Error: errors.Wrap(doErr, fmt.Sprint("unable to invoke ", c.Name)),
+			Error: errors.Wrap(doErr, fmt.Sprint("unable to invoke ", c.Name, " in ", c.Namespace)),
 		}
 		return nil, doErr
 	}
@@ -89,7 +91,7 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 		if readErr != nil {
 			log.Printf("Error reading body")
 			i.Responses <- types.InvokerResponse{
-				Error: errors.Wrap(readErr, fmt.Sprint("unable to invoke ", c.Name)),
+				Error: errors.Wrap(readErr, fmt.Sprint("unable to invoke ", c.Name, " in ", c.Namespace)),
 			}
 			return nil, doErr
 		}
