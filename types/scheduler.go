@@ -4,7 +4,6 @@
 package types
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
@@ -39,7 +38,7 @@ type ScheduledFunctions []ScheduledFunction
 // AddCronFunction adds a function to cron
 func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
 	eID, err := s.main.AddFunc(c.Schedule, func() {
-		log.Print(fmt.Sprint("Executed function: ", c.Name))
+		log.Printf("Executed function: %s (ns=%s)", c.Name, c.Namespace)
 		c.InvokeFunction(invoker)
 	})
 	return ScheduledFunction{c, EntryID(eID)}, err
@@ -72,7 +71,7 @@ func CheckSchedule(schedule string) bool {
 func (functions *ScheduledFunctions) Contains(cronFunc *CronFunction) bool {
 	for _, f := range *functions {
 
-		if f.Function.Name == cronFunc.Name && f.Function.Schedule == cronFunc.Schedule {
+		if f.Function.Name == cronFunc.Name && f.Function.Namespace == cronFunc.Namespace && f.Function.Schedule == cronFunc.Schedule {
 			return true
 		}
 
