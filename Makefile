@@ -29,9 +29,3 @@ test:
 
 verify-codegen:
 	./hack/verify-codegen.sh
-
-charts:
-	cd chart && helm package cron-connector/
-	mv chart/*.tgz docs/
-	helm repo index docs --url https://inlets.github.io/cron-connector/ --merge ./docs/index.yaml
-

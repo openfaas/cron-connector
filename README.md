@@ -8,19 +8,13 @@ This project was forked from [zeerorg/cron-connector](https://github.com/openfaa
 
 You need to have OpenFaaS deployed first, see [https://docs.openfaas.com](https://docs.openfaas.com) to get started
 
-Works with both AMD64 and armhf (Raspberry Pi).
+### Deploy using the Helm chart
 
-1. For Docker Swarm: 
-```
-curl -s https://raw.githubusercontent.com/openfaas-incubator/cron-connector/master/yaml/docker-compose.yml | docker stack deploy func -c -
-```
+The helm chart is available in the [faas-netes](https://github.com/openfaas/faas-netes/tree/master/chart/cron-connector) repo.
 
-2. For Kubernetes:
-```
-curl -s https://raw.githubusercontent.com/openfaas-incubator/cron-connector/master/yaml/kubernetes/connector-dep.yml | kubectl apply -f - 
-```
+For faasd, you can edit your `docker-compose.yaml` file to see the deployment. See the chart above for the image name and configuration required.
 
-## Adding function
+### Trigger a function from Cron
 
 The function should have 2 annotations:
 
@@ -49,7 +43,3 @@ functions:
 You can learn how to create and test the [Cron syntax here](https://crontab.guru/every-5-minutes).
 
 See the full example here: [sample/stack.yml](sample/stack.yml)
-
-## Helm
-
-The helm chart is available in the [faas-netes](https://github.com/openfaas/faas-netes/tree/master/chart/cron-connector) repo.
