@@ -1,4 +1,4 @@
-// Copyright (c) Rishabh Gupta 2019. All rights reserved.
+// Copyright (c) OpenFaaS Author(s) 2020. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package main
@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
-	cfunction "github.com/openfaas-incubator/cron-connector/types"
+	cfunction "github.com/openfaas/cron-connector/types"
+	"github.com/openfaas/cron-connector/version"
 	"github.com/openfaas/faas/gateway/requests"
 )
 
@@ -22,6 +23,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	sha, ver := version.GetReleaseInfo()
+	log.Printf("Version: %s\tCommit: %s", sha, ver)
 
 	controller := types.NewController(creds, config)
 	cronScheduler := cfunction.NewScheduler()

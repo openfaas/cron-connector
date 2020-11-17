@@ -1,0 +1,11 @@
+github.com/ewilde/faas-federation v0.0.0-20200206161705-23d8f6d639f1/go.mod h1:KUZSQ/D7+BBykfBCx2cPn8LZdvRLPHwBLhKxF94jRWw=
+github.com/openfaas-incubator/connector-sdk v0.0.0-20190125151851-d722c9f72ad0 h1:K7UydMie+pPYUtyA/Ele4xMst5q2D8yYPNg5NU2cs3U=
+github.com/openfaas-incubator/connector-sdk v0.0.0-20190125151851-d722c9f72ad0/go.mod h1:jHCtd1HCZwhuwdPy4OB8CQU7ZqzxBdWNhIhH/khCJqQ=
+github.com/openfaas/cron-connector v0.2.2/go.mod h1:G+g/i/KXbkd3A/W0FogoRnGxG0uOOhOkshPhuWWdUnQ=
+github.com/openfaas/faas v0.0.0-20190104165101-a65df4795bc6 h1:eCf/7VwjpIOfLecWQoO0W9UMu1g5g9Ocwp+Sg7jkGzg=
+github.com/openfaas/faas v0.0.0-20190104165101-a65df4795bc6/go.mod h1:E0m2rLup0Vvxg53BKxGgaYAGcZa3Xl+vvL7vSi5yQ14=
+github.com/openfaas/faas-provider v0.0.0-20181216160432-220324e98f5d h1:mPAUhyVGlBfGVQQUngtyGEH9uidFUzq9R5QkrpqGJug=
+github.com/openfaas/faas-provider v0.0.0-20181216160432-220324e98f5d/go.mod h1:W4OIp33RUOpR7wW+omJB/7GhIydRmYXvKf/VqUKI4yM=
+github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 h1:E846t8CnR+lv5nE+VuiKTDG/v1U2stad0QzddfJC7kY=
+gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5/go.mod h1:hiOFpYm0ZJbusNj2ywpbrXowU3G8U6GIQzqn2mw1UIE=

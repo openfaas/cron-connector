@@ -1,11 +1,11 @@
-// Copyright (c) Rishabh Gupta 2019. All rights reserved.
+// Copyright (c) OpenFaaS Author(s) 2020. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 package main
 
 import (
 	"testing"
 
-	cfunction "github.com/openfaas-incubator/cron-connector/types"
+	cfunction "github.com/openfaas/cron-connector/types"
 	"github.com/openfaas/faas/gateway/requests"
 )
 

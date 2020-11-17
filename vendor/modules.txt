@@ -1,0 +1,10 @@
+# github.com/openfaas-incubator/connector-sdk v0.0.0-20190125151851-d722c9f72ad0
+github.com/openfaas-incubator/connector-sdk/types
+# github.com/openfaas/faas v0.0.0-20190104165101-a65df4795bc6
+github.com/openfaas/faas/gateway/requests
+# github.com/openfaas/faas-provider v0.0.0-20181216160432-220324e98f5d
+github.com/openfaas/faas-provider/auth
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
+# gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
+gopkg.in/robfig/cron.v2
