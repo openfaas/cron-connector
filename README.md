@@ -14,6 +14,32 @@ The helm chart is available in the [faas-netes](https://github.com/openfaas/faas
 
 For faasd, you can edit your `docker-compose.yaml` file to see the deployment. See the chart above for the image name and configuration required.
 
+### Add to faasd
+
+Edit `/var/lib/faasd/docker-compose.yaml` and add:
+
+```yaml
+  cron-connector:
+    image: "ghcr.io/openfaas/cron-connector:latest"
+    environment:
+      - gateway_url=http://gateway:8080
+      - basic_auth=true
+      - secret_mount_path=/run/secrets
+    volumes:
+      # we assume cwd == /var/lib/faasd
+      - type: bind
+        source: ./secrets/basic-auth-password
+        target: /run/secrets/basic-auth-password
+      - type: bind
+        source: ./secrets/basic-auth-user
+        target: /run/secrets/basic-auth-user
+    cap_add:
+      - CAP_NET_RAW
+    depends_on:
+      - gateway
+```
+
+Then restart faasd.
 ### Trigger a function from Cron
 
 The function should have 2 annotations:
