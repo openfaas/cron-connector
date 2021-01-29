@@ -8,11 +8,15 @@ import (
 	"log"
 
 	"github.com/openfaas-incubator/connector-sdk/types"
-	"gopkg.in/robfig/cron.v2"
+	cron "github.com/robfig/cron/v3"
 )
 
 // EntryID type redifined for this package
 type EntryID cron.EntryID
+
+var standardParser = cron.NewParser(
+	cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor,
+)
 
 // Scheduler is an interface which talks with cron scheduler
 type Scheduler struct {
@@ -44,7 +48,7 @@ func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (Sch
 // NewScheduler returns a scheduler
 func NewScheduler() *Scheduler {
 	return &Scheduler{
-		cron.New(),
+		cron.New(cron.WithParser(standardParser)),
 	}
 }
 
@@ -60,7 +64,7 @@ func (s *Scheduler) Remove(function ScheduledFunction) {
 
 // CheckSchedule returns true if the schedule string is compliant with cron
 func CheckSchedule(schedule string) bool {
-	_, err := cron.Parse(schedule)
+	_, err := standardParser.Parse(schedule)
 	return err == nil
 }
 
