@@ -6,5 +6,5 @@ github.com/openfaas/faas/gateway/requests
 github.com/openfaas/faas-provider/auth
 # github.com/pkg/errors v0.8.1
 github.com/pkg/errors
-# gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
-gopkg.in/robfig/cron.v2
+# github.com/robfig/cron/v3 v3.0.0
+github.com/robfig/cron/v3

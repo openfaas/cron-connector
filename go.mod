@@ -8,5 +8,6 @@ require (
 	github.com/openfaas/faas v0.0.0-20190104165101-a65df4795bc6
 	github.com/openfaas/faas-provider v0.0.0-20181216160432-220324e98f5d // indirect
 	github.com/pkg/errors v0.8.1
-	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5
+	github.com/robfig/cron/v3 v3.0.0
+	gopkg.in/robfig/cron.v2 v2.0.0-20150107220207-be2e0b0deed5 // indirect
 )
