@@ -68,4 +68,3 @@ functions:
 
 You can learn how to create and test the [Cron syntax here](https://crontab.guru/every-5-minutes).
 
-See the full example here: [sample/stack.yml](sample/stack.yml)

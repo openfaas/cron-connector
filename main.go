@@ -11,7 +11,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/openfaas-incubator/connector-sdk/types"
+	"github.com/openfaas/connector-sdk/types"
 	cfunction "github.com/openfaas/cron-connector/types"
 	"github.com/openfaas/cron-connector/version"
 	sdk "github.com/openfaas/faas-cli/proxy"

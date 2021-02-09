@@ -10,7 +10,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/openfaas-incubator/connector-sdk/types"
+	"github.com/openfaas/connector-sdk/types"
 	ptypes "github.com/openfaas/faas-provider/types"
 	"github.com/pkg/errors"
 )
