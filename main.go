@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/openfaas/connector-sdk/types"
@@ -27,7 +28,12 @@ func main() {
 	sha, ver := version.GetReleaseInfo()
 	log.Printf("Version: %s\tCommit: %s", sha, ver)
 
-	invoker := types.NewInvoker(config.GatewayURL, types.MakeClient(config.UpstreamTimeout), config.PrintResponse)
+	context := "/async-function"
+	if !config.AsyncFunctionInvocation {
+		context = "/function"
+	}
+
+	invoker := types.NewInvoker(config.GatewayURL+context, types.MakeClient(config.UpstreamTimeout), config.PrintResponse)
 	cronScheduler := cfunction.NewScheduler()
 	topic := "cron-function"
 	interval := time.Second * 10
@@ -47,10 +53,21 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 		return nil, fmt.Errorf("Gateway URL not set")
 	}
 
+	// Get the async env value, if present. Defaults to true.
+	async, ok := os.LookupEnv("async_invocation")
+	if !ok {
+		async = "true"
+	}
+	asyncParsed, err := strconv.ParseBool(async)
+	if err != nil {
+		asyncParsed = true
+	}
+
 	return &types.ControllerConfig{
-		RebuildInterval: time.Millisecond * 1000,
-		GatewayURL:      gURL,
-		PrintResponse:   true,
+		GatewayURL:              gURL,
+		RebuildInterval:         time.Millisecond * 1000,
+		AsyncFunctionInvocation: asyncParsed,
+		PrintResponse:           true,
 	}, nil
 }
 

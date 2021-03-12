@@ -66,7 +66,7 @@ func ToCronFunction(f ptypes.FunctionStatus, namespace string, topic string) (Cr
 
 // InvokeFunction Invokes the cron function
 func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
-	gwURL := fmt.Sprintf("%s/function/%s.%s", i.GatewayURL, c.Name, c.Namespace)
+	gwURL := fmt.Sprintf("%s/%s.%s", i.GatewayURL, c.Name, c.Namespace)
 	reader := bytes.NewReader(make([]byte, 0))
 	httpReq, _ := http.NewRequest(http.MethodPost, gwURL, reader)
 
