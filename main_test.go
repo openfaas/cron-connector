@@ -5,6 +5,7 @@ package main
 import (
 	"testing"
 
+	"github.com/openfaas/connector-sdk/types"
 	cfunction "github.com/openfaas/cron-connector/types"
 	ptypes "github.com/openfaas/faas-provider/types"
 )
@@ -67,4 +68,36 @@ func TestNamespaceFuncs(t *testing.T) {
 	if addFuncs.Contains(&newCronFunctions[0]) || deleteFuncs.Contains(&newCronFunctions[0]) {
 		t.Error("function should be left as it is")
 	}
+}
+
+func TestGatewayRoute_Async(t *testing.T) {
+	testscases := []struct {
+		GatewayURL              string
+		ExpectedGatewayURL      string
+		AsyncFunctionInvocation bool
+	}{
+		{
+			GatewayURL:              "http://localhost:8080",
+			AsyncFunctionInvocation: true,
+			ExpectedGatewayURL:      "http://localhost:8080/async-function",
+		},
+		{
+			GatewayURL:              "http://localhost:8080",
+			AsyncFunctionInvocation: false,
+			ExpectedGatewayURL:      "http://localhost:8080/function",
+		},
+	}
+
+	for _, test := range testscases {
+		config := &types.ControllerConfig{
+			GatewayURL:              test.GatewayURL,
+			AsyncFunctionInvocation: test.AsyncFunctionInvocation,
+		}
+
+		val := gatewayRoute(config)
+		if val != test.ExpectedGatewayURL {
+			t.Errorf("expected: %s, got: %s", test.ExpectedGatewayURL, val)
+		}
+	}
+
 }

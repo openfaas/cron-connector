@@ -25,9 +25,11 @@ func main() {
 	}
 
 	sha, ver := version.GetReleaseInfo()
-	log.Printf("Version: %s\tCommit: %s", sha, ver)
+	log.Printf("Version: %s\tCommit: %s\n", sha, ver)
+	log.Printf("Gateway URL:  %s", config.GatewayURL)
+	log.Printf("Async Invocation:  %v", config.AsyncFunctionInvocation)
 
-	invoker := types.NewInvoker(config.GatewayURL, types.MakeClient(config.UpstreamTimeout), config.PrintResponse)
+	invoker := types.NewInvoker(gatewayRoute(config), types.MakeClient(config.UpstreamTimeout), config.PrintResponse)
 	cronScheduler := cfunction.NewScheduler()
 	topic := "cron-function"
 	interval := time.Second * 10
@@ -40,6 +42,13 @@ func main() {
 	}
 }
 
+func gatewayRoute(config *types.ControllerConfig) string {
+	if config.AsyncFunctionInvocation {
+		return fmt.Sprintf("%s/%s", config.GatewayURL, "async-function")
+	}
+	return fmt.Sprintf("%s/%s", config.GatewayURL, "function")
+}
+
 func getControllerConfig() (*types.ControllerConfig, error) {
 	gURL, ok := os.LookupEnv("gateway_url")
 
@@ -47,10 +56,16 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 		return nil, fmt.Errorf("Gateway URL not set")
 	}
 
+	asynchronousInvocation := false
+	if val, exists := os.LookupEnv("asynchronous_invocation"); exists {
+		asynchronousInvocation = (val == "1" || val == "true")
+	}
+
 	return &types.ControllerConfig{
-		RebuildInterval: time.Millisecond * 1000,
-		GatewayURL:      gURL,
-		PrintResponse:   true,
+		RebuildInterval:         time.Millisecond * 1000,
+		GatewayURL:              gURL,
+		PrintResponse:           true,
+		AsyncFunctionInvocation: asynchronousInvocation,
 	}, nil
 }
 
