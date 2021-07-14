@@ -1,4 +1,4 @@
-// Copyright (c) OpenFaaS Author(s) 2020. All rights reserved.
+// Copyright (c) OpenFaaS Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package main
@@ -29,7 +29,11 @@ func main() {
 	log.Printf("Gateway URL:  %s", config.GatewayURL)
 	log.Printf("Async Invocation:  %v", config.AsyncFunctionInvocation)
 
-	invoker := types.NewInvoker(gatewayRoute(config), types.MakeClient(config.UpstreamTimeout), config.PrintResponse)
+	invoker := types.NewInvoker(gatewayRoute(config),
+		types.MakeClient(config.UpstreamTimeout),
+		config.ContentType,
+		config.PrintResponse)
+
 	cronScheduler := cfunction.NewScheduler()
 	topic := "cron-function"
 	interval := time.Second * 10
@@ -53,7 +57,7 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 	gURL, ok := os.LookupEnv("gateway_url")
 
 	if !ok {
-		return nil, fmt.Errorf("Gateway URL not set")
+		return nil, fmt.Errorf("gateway_url environment variable not set")
 	}
 
 	asynchronousInvocation := false
@@ -61,21 +65,27 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 		asynchronousInvocation = (val == "1" || val == "true")
 	}
 
+	contentType := "text/plain"
+	if v, exists := os.LookupEnv("content_type"); exists && len(v) > 0 {
+		contentType = v
+	}
+
 	return &types.ControllerConfig{
 		RebuildInterval:         time.Millisecond * 1000,
 		GatewayURL:              gURL,
 		PrintResponse:           true,
 		AsyncFunctionInvocation: asynchronousInvocation,
+		ContentType:             contentType,
 	}, nil
 }
 
-//BasicAuth basic authentication for the the gateway
+// BasicAuth basic authentication for the the gateway
 type BasicAuth struct {
 	Username string
 	Password string
 }
 
-//Set set Authorization header on request
+// Set set Authorization header on request
 func (auth *BasicAuth) Set(req *http.Request) error {
 	req.SetBasicAuth(auth.Username, auth.Password)
 	return nil
@@ -103,21 +113,22 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 
 		namespaces, err := sdkClient.ListNamespaces(ctx)
 		if err != nil {
-			return fmt.Errorf("Couldn't fetch Namespaces due to: %s", err)
+			return fmt.Errorf("can't list namespaces: %w", err)
 		}
 
 		for _, namespace := range namespaces {
 			functions, err := sdkClient.ListFunctions(ctx, namespace)
 			if err != nil {
-				return fmt.Errorf("Couldn't fetch Functions due to: %s", err)
+				return fmt.Errorf("can't list functions: %w", err)
 			}
 
-			newCronFunctions := RequestsToCronFunctions(functions, namespace, topic)
-			addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, runningFuncs, namespace)
+			newCronFunctions := requestsToCronFunctions(functions, namespace, topic)
+			addFuncs, deleteFuncs := getNewAndDeleteFuncs(newCronFunctions, runningFuncs, namespace)
 
 			for _, function := range deleteFuncs {
+				log.Printf("Unregistered [%s]", function.Function.String())
+
 				cronScheduler.Remove(function)
-				log.Print("deleted function ", function.Function.Name, " in ", function.Function.Namespace)
 			}
 
 			newScheduledFuncs := make(cfunction.ScheduledFunctions, 0)
@@ -125,20 +136,21 @@ func startFunctionProbe(interval time.Duration, topic string, c *types.Controlle
 			for _, function := range addFuncs {
 				f, err := cronScheduler.AddCronFunction(function, invoker)
 				if err != nil {
-					log.Fatal("could not add function ", function.Name, " in ", function.Namespace)
+					return fmt.Errorf("can't add function: %s, %w", function.String(), err)
 				}
 
 				newScheduledFuncs = append(newScheduledFuncs, f)
-				log.Print("added function ", function.Name, " in ", function.Namespace)
+				log.Printf("Registered: %s [%s]", function.String(), function.Schedule)
 			}
 
-			runningFuncs = UpdateScheduledFunctions(runningFuncs, newScheduledFuncs, deleteFuncs)
+			runningFuncs = updateScheduledFunctions(runningFuncs, newScheduledFuncs, deleteFuncs)
 		}
 	}
 }
 
-// RequestsToCronFunctions converts an array of types.FunctionStatus object to CronFunction, ignoring those that cannot be converted
-func RequestsToCronFunctions(functions []ptypes.FunctionStatus, namespace string, topic string) cfunction.CronFunctions {
+// requestsToCronFunctions converts an array of types.FunctionStatus object
+// to CronFunction, ignoring those that cannot be converted
+func requestsToCronFunctions(functions []ptypes.FunctionStatus, namespace string, topic string) cfunction.CronFunctions {
 	newCronFuncs := make(cfunction.CronFunctions, 0)
 	for _, function := range functions {
 		cF, err := cfunction.ToCronFunction(function, namespace, topic)
@@ -150,8 +162,9 @@ func RequestsToCronFunctions(functions []ptypes.FunctionStatus, namespace string
 	return newCronFuncs
 }
 
-// GetNewAndDeleteFuncs takes new functions and running cron functions and returns functions that need to be added and that need to be deleted
-func GetNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.ScheduledFunctions, namespace string) (cfunction.CronFunctions, cfunction.ScheduledFunctions) {
+// getNewAndDeleteFuncs takes new functions and running cron functions and returns
+// functions that need to be added and that need to be deleted
+func getNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.ScheduledFunctions, namespace string) (cfunction.CronFunctions, cfunction.ScheduledFunctions) {
 	addFuncs := make(cfunction.CronFunctions, 0)
 	deleteFuncs := make(cfunction.ScheduledFunctions, 0)
 
@@ -170,8 +183,9 @@ func GetNewAndDeleteFuncs(newFuncs cfunction.CronFunctions, oldFuncs cfunction.S
 	return addFuncs, deleteFuncs
 }
 
-// UpdateScheduledFunctions updates the scheduled function with added functions and removes deleted functions
-func UpdateScheduledFunctions(running, added, deleted cfunction.ScheduledFunctions) cfunction.ScheduledFunctions {
+// updateScheduledFunctions updates the scheduled function with
+// added functions and removes deleted functions
+func updateScheduledFunctions(running, added, deleted cfunction.ScheduledFunctions) cfunction.ScheduledFunctions {
 	updatedSchedule := make(cfunction.ScheduledFunctions, 0)
 
 	for _, function := range running {
@@ -180,9 +194,7 @@ func UpdateScheduledFunctions(running, added, deleted cfunction.ScheduledFunctio
 		}
 	}
 
-	for _, function := range added {
-		updatedSchedule = append(updatedSchedule, function)
-	}
+	updatedSchedule = append(updatedSchedule, added...)
 
 	return updatedSchedule
 }

@@ -1,4 +1,4 @@
-// Copyright (c) OpenFaaS Author(s) 2020. All rights reserved.
+// Copyright (c) OpenFaaS Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 package types
@@ -38,7 +38,7 @@ type ScheduledFunctions []ScheduledFunction
 // AddCronFunction adds a function to cron
 func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
 	eID, err := s.main.AddFunc(c.Schedule, func() {
-		log.Printf("Executed function: %s (ns=%s)", c.Name, c.Namespace)
+		log.Printf("Executing function: %s", c.String())
 		c.InvokeFunction(invoker)
 	})
 	return ScheduledFunction{c, EntryID(eID)}, err
@@ -70,11 +70,11 @@ func CheckSchedule(schedule string) bool {
 // Contains returns true if the ScheduledFunctions array contains the CronFunction
 func (functions *ScheduledFunctions) Contains(cronFunc *CronFunction) bool {
 	for _, f := range *functions {
-
-		if f.Function.Name == cronFunc.Name && f.Function.Namespace == cronFunc.Namespace && f.Function.Schedule == cronFunc.Schedule {
+		if f.Function.Name == cronFunc.Name &&
+			f.Function.Namespace == cronFunc.Namespace &&
+			f.Function.Schedule == cronFunc.Schedule {
 			return true
 		}
-
 	}
 
 	return false
