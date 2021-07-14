@@ -35,15 +35,6 @@ type ScheduledFunction struct {
 // ScheduledFunctions is an array of ScheduledFunction
 type ScheduledFunctions []ScheduledFunction
 
-// AddCronFunction adds a function to cron
-func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
-	eID, err := s.main.AddFunc(c.Schedule, func() {
-		log.Printf("Executing function: %s", c.String())
-		c.InvokeFunction(invoker)
-	})
-	return ScheduledFunction{c, EntryID(eID)}, err
-}
-
 // NewScheduler returns a scheduler
 func NewScheduler() *Scheduler {
 	return &Scheduler{
@@ -54,6 +45,15 @@ func NewScheduler() *Scheduler {
 // Start a scheduler in new go routine
 func (s *Scheduler) Start() {
 	s.main.Start()
+}
+
+// AddCronFunction adds a function to cron
+func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
+	eID, err := s.main.AddFunc(c.Schedule, func() {
+		log.Printf("Executing function: %s", c.String())
+		c.InvokeFunction(invoker)
+	})
+	return ScheduledFunction{c, EntryID(eID)}, err
 }
 
 // Remove removes the function from scheduler

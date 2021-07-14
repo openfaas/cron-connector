@@ -50,32 +50,32 @@ func (c *CronFunctions) Contains(cf *CronFunction) bool {
 // and returns error if it is not possible
 func ToCronFunction(f ptypes.FunctionStatus, namespace string, topic string) (CronFunction, error) {
 	if f.Annotations == nil {
-		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has no annotations."))
+		return CronFunction{}, fmt.Errorf("%s has no annotations", f.Name)
 	}
+
 	fTopic := (*f.Annotations)["topic"]
 	fSchedule := (*f.Annotations)["schedule"]
 
 	if fTopic != topic {
-		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has wrong topic: ", fTopic))
+		return CronFunction{}, fmt.Errorf("%s has wrong topic: %s", fTopic, f.Name)
 	}
 
 	if !CheckSchedule(fSchedule) {
-		return CronFunction{}, errors.New(fmt.Sprint(f.Name, " has wrong cron schedule: ", fSchedule))
+		return CronFunction{}, fmt.Errorf("%s has wrong cron schedule: %s", f.Name, fSchedule)
 	}
 
-	var c CronFunction
-	c.FuncData = f
-	c.Name = f.Name
-	c.Namespace = namespace
-	c.Schedule = fSchedule
-	return c, nil
+	return CronFunction{
+		FuncData:  f,
+		Name:      f.Name,
+		Namespace: namespace,
+		Schedule:  fSchedule,
+	}, nil
 }
 
 // InvokeFunction Invokes the cron function
 func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 
 	gwURL := fmt.Sprintf("%s/%s", i.GatewayURL, c.String())
-	log.Printf("HTTP POST: %s", gwURL)
 
 	req, err := http.NewRequest(http.MethodPost, gwURL, nil)
 	if err != nil {
@@ -91,7 +91,7 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 
 	if err != nil {
 		i.Responses <- types.InvokerResponse{
-			Error: errors.Wrap(err, fmt.Sprint("unable to invoke ", c.Name, " in ", c.Namespace)),
+			Error: errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
 		}
 		return nil, err
 	}
@@ -103,8 +103,9 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 		if err != nil {
 			log.Printf("Error reading body")
 			i.Responses <- types.InvokerResponse{
-				Error: errors.Wrap(err, fmt.Sprint("unable to invoke ", c.Name, " in ", c.Namespace)),
+				Error: errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
 			}
+
 			return nil, err
 		}
 
