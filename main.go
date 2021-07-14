@@ -18,6 +18,10 @@ import (
 	ptypes "github.com/openfaas/faas-provider/types"
 )
 
+// topic is the value of the "topic" annotation to look for
+// on functions, to decide to include them for invocation
+const topic = "cron-function"
+
 func main() {
 	config, err := getControllerConfig()
 	if err != nil {
@@ -26,8 +30,8 @@ func main() {
 
 	sha, ver := version.GetReleaseInfo()
 	log.Printf("Version: %s\tCommit: %s\n", sha, ver)
-	log.Printf("Gateway URL:  %s", config.GatewayURL)
-	log.Printf("Async Invocation:  %v", config.AsyncFunctionInvocation)
+	log.Printf("Gateway URL: %s", config.GatewayURL)
+	log.Printf("Async Invocation: %v", config.AsyncFunctionInvocation)
 
 	invoker := types.NewInvoker(gatewayRoute(config),
 		types.MakeClient(config.UpstreamTimeout),
@@ -35,7 +39,6 @@ func main() {
 		config.PrintResponse)
 
 	cronScheduler := cfunction.NewScheduler()
-	topic := "cron-function"
 	interval := time.Second * 10
 
 	cronScheduler.Start()
@@ -50,6 +53,7 @@ func gatewayRoute(config *types.ControllerConfig) string {
 	if config.AsyncFunctionInvocation {
 		return fmt.Sprintf("%s/%s", config.GatewayURL, "async-function")
 	}
+
 	return fmt.Sprintf("%s/%s", config.GatewayURL, "function")
 }
 
