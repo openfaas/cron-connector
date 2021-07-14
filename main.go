@@ -25,7 +25,8 @@ const topic = "cron-function"
 func main() {
 	config, err := getControllerConfig()
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		os.Exit(1)
 	}
 
 	sha, ver := version.GetReleaseInfo()
@@ -38,6 +39,17 @@ func main() {
 		config.ContentType,
 		config.PrintResponse)
 
+	go func() {
+		for {
+			r := <-invoker.Responses
+			if r.Error != nil {
+				log.Printf("Error with: %s, %s", r.Function, err.Error())
+			} else {
+				log.Printf("Response: %s [%d]", r.Function, r.Status)
+			}
+		}
+	}()
+
 	cronScheduler := cfunction.NewScheduler()
 	interval := time.Second * 10
 
@@ -45,7 +57,8 @@ func main() {
 	err = startFunctionProbe(interval, topic, config, cronScheduler, invoker)
 
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		os.Exit(1)
 	}
 }
 
