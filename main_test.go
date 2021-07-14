@@ -1,4 +1,4 @@
-// Copyright (c) OpenFaaS Author(s) 2020. All rights reserved.
+// Copyright (c) OpenFaaS Author(s) 2021. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 package main
 
@@ -10,7 +10,7 @@ import (
 	ptypes "github.com/openfaas/faas-provider/types"
 )
 
-func TestGetNewAndDeleteFuncs(t *testing.T) {
+func TestgetNewAndDeleteFuncs(t *testing.T) {
 	newCronFunctions := make(cfunction.CronFunctions, 3)
 	defaultReq := ptypes.FunctionStatus{}
 	newCronFunctions[0] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_unchanged", Namespace: "openfaas-fn", Schedule: "* * * * *"}
@@ -22,7 +22,7 @@ func TestGetNewAndDeleteFuncs(t *testing.T) {
 	oldFuncs[1] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_delete", Namespace: "openfaas-fn", Schedule: "* * * * *"}, ID: 0}
 	oldFuncs[2] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_update", Namespace: "openfaas-fn", Schedule: "* * * * *"}, ID: 0}
 
-	addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, oldFuncs, "openfaas-fn")
+	addFuncs, deleteFuncs := getNewAndDeleteFuncs(newCronFunctions, oldFuncs, "openfaas-fn")
 	if !deleteFuncs.Contains(&oldFuncs[1].Function) {
 		t.Error("function was not deleted")
 	}
@@ -52,7 +52,7 @@ func TestNamespaceFuncs(t *testing.T) {
 	oldFuncs[1] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_delete", Namespace: "openfaas-fn", Schedule: "* * * * *"}, ID: 0}
 	oldFuncs[2] = cfunction.ScheduledFunction{Function: cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_to_update", Namespace: "openfaas-fn", Schedule: "* * * * *"}, ID: 0}
 
-	addFuncs, deleteFuncs := GetNewAndDeleteFuncs(newCronFunctions, oldFuncs, "openfaas-fn")
+	addFuncs, deleteFuncs := getNewAndDeleteFuncs(newCronFunctions, oldFuncs, "openfaas-fn")
 	if !deleteFuncs.Contains(&oldFuncs[1].Function) {
 		t.Error("function was not deleted")
 	}
