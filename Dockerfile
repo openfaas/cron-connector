@@ -27,7 +27,7 @@ RUN VERSION=$(git describe --all --exact-match `git rev-parse HEAD` | grep tags 
         -X github.com/openfaas/cron-connector/version.Version=${VERSION}" \
         -a -installsuffix cgo -o cron-connector .
 
-FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.12 as ship
+FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.14 as ship
 LABEL org.label-schema.license="MIT" \
       org.label-schema.vcs-url="https://github.com/openfaas/cron-connector" \
       org.label-schema.vcs-type="Git" \
