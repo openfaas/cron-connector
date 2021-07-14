@@ -75,6 +75,9 @@ func ToCronFunction(f ptypes.FunctionStatus, namespace string, topic string) (Cr
 // InvokeFunction Invokes the cron function
 func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 
+	name := c.Name
+	topic := (*c.FuncData.Annotations)["topic"]
+
 	gwURL := fmt.Sprintf("%s/%s", i.GatewayURL, c.String())
 
 	req, err := http.NewRequest(http.MethodPost, gwURL, nil)
@@ -91,7 +94,10 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 
 	if err != nil {
 		i.Responses <- types.InvokerResponse{
-			Error: errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
+			Error:    errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
+			Function: name,
+			Topic:    topic,
+			Status:   http.StatusServiceUnavailable,
 		}
 		return nil, err
 	}
@@ -103,7 +109,10 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 		if err != nil {
 			log.Printf("Error reading body")
 			i.Responses <- types.InvokerResponse{
-				Error: errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
+				Error:    errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
+				Status:   http.StatusServiceUnavailable,
+				Function: name,
+				Topic:    topic,
 			}
 
 			return nil, err
@@ -116,8 +125,8 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 		Body:     body,
 		Status:   res.StatusCode,
 		Header:   &res.Header,
-		Function: c.Name,
-		Topic:    (*c.FuncData.Annotations)["topic"],
+		Function: name,
+		Topic:    topic,
 	}
 
 	return body, nil
