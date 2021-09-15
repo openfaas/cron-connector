@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/openfaas/connector-sdk/types"
@@ -87,12 +88,22 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 		contentType = v
 	}
 
+	var basicAuth bool
+	var err error
+	if val, exists := os.LookupEnv("basic_auth"); exists {
+		basicAuth, err = strconv.ParseBool(val)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &types.ControllerConfig{
 		RebuildInterval:         time.Millisecond * 1000,
 		GatewayURL:              gURL,
 		PrintResponse:           true,
 		AsyncFunctionInvocation: asynchronousInvocation,
 		ContentType:             contentType,
+		BasicAuth:               basicAuth,
 	}, nil
 }
 
@@ -108,12 +119,27 @@ func (auth *BasicAuth) Set(req *http.Request) error {
 	return nil
 }
 
+// NoAuth auth to when basic auth is disabled
+type NoAuth struct {
+}
+
+// Set authorization header or request
+func (auth *NoAuth) Set(req *http.Request) error {
+	return nil
+}
+
 func startFunctionProbe(interval time.Duration, topic string, c *types.ControllerConfig, cronScheduler *cfunction.Scheduler, invoker *types.Invoker) error {
 	runningFuncs := make(cfunction.ScheduledFunctions, 0)
 	timeout := 3 * time.Second
-	auth := &BasicAuth{}
-	auth.Username = types.GetCredentials().User
-	auth.Password = types.GetCredentials().Password
+	var auth sdk.ClientAuth
+	if c.BasicAuth {
+		auth = &BasicAuth{
+			Username: types.GetCredentials().User,
+			Password: types.GetCredentials().Password,
+		}
+	} else {
+		auth = &NoAuth{}
+	}
 
 	sdkClient, err := sdk.NewClient(auth, c.GatewayURL, nil, &timeout)
 	if err != nil {
