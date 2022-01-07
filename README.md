@@ -1,4 +1,4 @@
-# A Cron Connector for OpenFaaS
+# Invoke your functions on a cron schedule
 
 This is a cron event connector for OpenFaaS. This was built to provide a timer interface to trigger OpenFaaS functions. Also checkout [OpenFaaS docs on cron](https://docs.openfaas.com/reference/cron/) for other methods on how you can run functions triggered by cron.
 
