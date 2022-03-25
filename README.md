@@ -6,40 +6,16 @@ This project was forked from [zeerorg/cron-connector](https://github.com/openfaa
 
 ## How to Use
 
-You need to have OpenFaaS deployed first, see [https://docs.openfaas.com](https://docs.openfaas.com) to get started
+First, [deploy OpenFaaS with faasd or Kubernetes](https://docs.openfaas.com/deployment/)
 
-### Deploy using the Helm chart
+### Deploy the connector for Kubernetes
 
-The helm chart is available in the [faas-netes](https://github.com/openfaas/faas-netes/tree/master/chart/cron-connector) repo.
+For Kubernetes, see: [Scheduling function runs](https://docs.openfaas.com/reference/cron/)
 
-For faasd, you can edit your `docker-compose.yaml` file to see the deployment. See the chart above for the image name and configuration required.
+### Deploy the connector for faasd
 
-### Add to faasd
+For faasd, see [Serverless For Everyone Else](https://gumroad.com/l/serverless-for-everyone-else).
 
-Edit `/var/lib/faasd/docker-compose.yaml` and add:
-
-```yaml
-  cron-connector:
-    image: "ghcr.io/openfaas/cron-connector:latest"
-    environment:
-      - gateway_url=http://gateway:8080
-      - basic_auth=true
-      - secret_mount_path=/run/secrets
-    volumes:
-      # we assume cwd == /var/lib/faasd
-      - type: bind
-        source: ./secrets/basic-auth-password
-        target: /run/secrets/basic-auth-password
-      - type: bind
-        source: ./secrets/basic-auth-user
-        target: /run/secrets/basic-auth-user
-    cap_add:
-      - CAP_NET_RAW
-    depends_on:
-      - gateway
-```
-
-Then restart faasd.
 ### Trigger a function from Cron
 
 The function should have 2 annotations:
@@ -51,8 +27,10 @@ For example, we may have a function "nodeinfo" which we want to invoke every 5 m
 
 Deploy via the CLI:
 
-```
-faas-cli store deploy nodeinfo --annotation schedule="*/5 * * * *" --annotation topic=cron-function
+```bash
+faas-cli store deploy nodeinfo \
+  --annotation schedule="*/5 * * * *" \
+  --annotation topic=cron-function
 ```
 
 Or via `stack.yml`:
