@@ -50,8 +50,10 @@ func (s *Scheduler) Start() {
 // AddCronFunction adds a function to cron
 func (s *Scheduler) AddCronFunction(c CronFunction, invoker *types.Invoker) (ScheduledFunction, error) {
 	eID, err := s.main.AddFunc(c.Schedule, func() {
-		log.Printf("Executing function: %s", c.String())
-		c.InvokeFunction(invoker)
+		log.Printf("Invoking: %s [%s]", c.String(), c.Schedule)
+		if _, err := c.InvokeFunction(invoker); err != nil {
+			log.Printf("Error: %s", err)
+		}
 	})
 	return ScheduledFunction{c, EntryID(eID)}, err
 }

@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/openfaas/connector-sdk/types"
 	ptypes "github.com/openfaas/faas-provider/types"
-	"github.com/pkg/errors"
 )
 
 // CronFunction depicts an OpenFaaS function which is invoked by cron
@@ -36,7 +36,6 @@ type CronFunctions []CronFunction
 // Contains returns true if the provided CronFunction object is in list
 func (c *CronFunctions) Contains(cf *CronFunction) bool {
 	for _, f := range *c {
-
 		if f.Name == cf.Name &&
 			f.Namespace == cf.Namespace &&
 			f.Schedule == cf.Schedule {
@@ -78,26 +77,36 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 	name := c.Name
 	topic := (*c.FuncData.Annotations)["topic"]
 
+	headers := http.Header{
+		"X-Topic":     {topic},
+		"X-Connector": {"cron-connector"},
+	}
+
 	gwURL := fmt.Sprintf("%s/%s", i.GatewayURL, c.String())
 
 	req, err := http.NewRequest(http.MethodPost, gwURL, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create http request")
+		return nil, fmt.Errorf("failed to create http request to %s %w", gwURL, err)
+	}
+
+	for k, v := range headers {
+		req.Header[k] = v
 	}
 
 	if req.Body != nil {
 		defer req.Body.Close()
 	}
+	start := time.Now()
 
 	var body *[]byte
 	res, err := i.Client.Do(req)
-
 	if err != nil {
 		i.Responses <- types.InvokerResponse{
-			Error:    errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
+			Error:    fmt.Errorf("unable to invoke %s %w", c.String(), err),
 			Function: name,
 			Topic:    topic,
 			Status:   http.StatusServiceUnavailable,
+			Duration: time.Since(start),
 		}
 		return nil, err
 	}
@@ -109,13 +118,14 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 		if err != nil {
 			log.Printf("Error reading body")
 			i.Responses <- types.InvokerResponse{
-				Error:    errors.Wrap(err, fmt.Sprintf("unable to invoke %s", c.String())),
+				Error:    fmt.Errorf("unable to invoke %s %w", c.String(), err),
 				Status:   http.StatusServiceUnavailable,
 				Function: name,
 				Topic:    topic,
+				Duration: time.Since(start),
 			}
 
-			return nil, err
+			return nil, fmt.Errorf("unable to read body %s", err)
 		}
 
 		body = &bytesOut
@@ -127,6 +137,7 @@ func (c CronFunction) InvokeFunction(i *types.Invoker) (*[]byte, error) {
 		Header:   &res.Header,
 		Function: name,
 		Topic:    topic,
+		Duration: time.Since(start),
 	}
 
 	return body, nil

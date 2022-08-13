@@ -1,28 +1,24 @@
-.PHONY: build push manifest test verify-codegen charts
-TAG?=latest
+IMG_NAME?=cron-connector
 
-# docker manifest command will work with Docker CLI 18.03 or newer
-# but for now it's still experimental feature so we need to enable that
+TAG?=dev
+PLATFORMS?=linux/amd64,linux/arm/v7,linux/arm64
+OWNER?=alexellis2
+SERVER?=docker.io
+
+VERSION := $(shell git describe --tags --dirty)
+GIT_COMMIT := $(shell git rev-parse HEAD)
+
 export DOCKER_CLI_EXPERIMENTAL=enabled
+export DOCKER_BUILDKIT=1
 
-build:
-	docker build -t openfaas/cron-connector:$(TAG)-amd64 . -f Dockerfile
-	docker build --build-arg OPTS="GOARCH=arm64" -t openfaas/cron-connector:$(TAG)-arm64 . -f Dockerfile
-	docker build --build-arg OPTS="GOARCH=arm GOARM=6" -t openfaas/cron-connector:$(TAG)-armhf . -f Dockerfile
-
-push:
-	docker push openfaas/cron-connector:$(TAG)-amd64
-	docker push openfaas/cron-connector:$(TAG)-arm64
-	docker push openfaas/cron-connector:$(TAG)-armhf
-
-manifest:
-	docker manifest create --amend openfaas/cron-connector:$(TAG) \
-		openfaas/cron-connector:$(TAG)-amd64 \
-		openfaas/cron-connector:$(TAG)-arm64 \
-		openfaas/cron-connector:$(TAG)-armhf
-	docker manifest annotate openfaas/cron-connector:$(TAG) openfaas/cron-connector:$(TAG)-arm64 --os linux --arch arm64
-	docker manifest annotate openfaas/cron-connector:$(TAG) openfaas/cron-connector:$(TAG)-armhf --os linux --arch arm --variant v6
-	docker manifest push -p openfaas/cron-connector:$(TAG)
-
-test:
-	go test ./...
+.PHONY: publish-buildx-all
+publish-buildx-all:
+	@echo  $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) && \
+	docker buildx create --use --name=multiarch --node=multiarch && \
+	docker buildx build \
+		--platform $(PLATFORMS) \
+		--push=true \
+        --build-arg GIT_COMMIT=$(GIT_COMMIT) \
+        --build-arg VERSION=$(VERSION) \
+		--tag $(SERVER)/$(OWNER)/$(IMG_NAME):$(TAG) \
+		.
