@@ -1,6 +1,6 @@
-FROM teamserverless/license-check:0.3.9 as license-check
+FROM ghcr.io/openfaas/license-check:0.4.0 as license-check
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.15 as build
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.18 as build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -9,6 +9,7 @@ ARG TARGETARCH
 
 ENV CGO_ENABLED=0
 ENV GO111MODULE=on
+# ENV GOFLAGS=-mod=vendor
 
 COPY --from=license-check /license-check /usr/bin/
 
@@ -27,7 +28,7 @@ RUN VERSION=$(git describe --all --exact-match `git rev-parse HEAD` | grep tags 
         -X github.com/openfaas/cron-connector/version.Version=${VERSION}" \
         -a -installsuffix cgo -o cron-connector .
 
-FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.14 as ship
+FROM --platform=${TARGETPLATFORM:-linux/amd64} alpine:3.16.1 as ship
 LABEL org.label-schema.license="MIT" \
       org.label-schema.vcs-url="https://github.com/openfaas/cron-connector" \
       org.label-schema.vcs-type="Git" \
