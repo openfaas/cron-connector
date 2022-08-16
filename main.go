@@ -122,13 +122,15 @@ func startFunctionProbe(interval time.Duration, probeTimeout time.Duration, topi
 
 		namespaces, err := sdkClient.ListNamespaces(ctx)
 		if err != nil {
-			return fmt.Errorf("can't list namespaces: %w", err)
+			log.Printf("error listing namespaces: %s", err)
+			continue
 		}
 
 		for _, namespace := range namespaces {
 			functions, err := sdkClient.ListFunctions(ctx, namespace)
 			if err != nil {
-				return fmt.Errorf("can't list functions: %w", err)
+				log.Printf("error listing functions in %s: %s", namespace, err)
+				continue
 			}
 
 			newCronFunctions := requestsToCronFunctions(functions, namespace, topic)
@@ -147,7 +149,8 @@ func startFunctionProbe(interval time.Duration, probeTimeout time.Duration, topi
 			for _, function := range addFuncs {
 				f, err := cronScheduler.AddCronFunction(function, invoker)
 				if err != nil {
-					return fmt.Errorf("can't add function: %s, %w", function.String(), err)
+					log.Printf("can't add function: %s, %s", function.String(), err)
+					continue
 				}
 
 				newScheduledFuncs = append(newScheduledFuncs, f)
