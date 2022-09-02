@@ -98,13 +98,27 @@ func (auth *BasicAuth) Set(req *http.Request) error {
 	return nil
 }
 
+// NoAuth auth to when basic auth is disabled
+type NoAuth struct {
+}
+
+// Set authorization header or request
+func (auth *NoAuth) Set(req *http.Request) error {
+	return nil
+}
+
 func startFunctionProbe(interval time.Duration, probeTimeout time.Duration, topic string, c *types.ControllerConfig, cronScheduler *crontypes.Scheduler, invoker *types.Invoker) error {
 	runningFuncs := make(crontypes.ScheduledFunctions, 0)
 
-	creds := types.GetCredentials()
-	auth := &BasicAuth{
-		Username: creds.User,
-		Password: creds.Password,
+	var auth sdk.ClientAuth
+	if c.BasicAuth {
+		creds := types.GetCredentials()
+		auth = &BasicAuth{
+			Username: creds.User,
+			Password: creds.Password,
+		}
+	} else {
+		auth = &NoAuth{}
 	}
 
 	sdkClient, err := sdk.NewClient(auth, c.GatewayURL, nil, &probeTimeout)
