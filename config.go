@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/openfaas/connector-sdk/types"
@@ -40,6 +41,16 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 		rebuildInterval = d
 	}
 
+	var basicAuth bool
+	if val, exists := os.LookupEnv("basic_auth"); exists {
+		a, err := strconv.ParseBool(val)
+		if err != nil {
+			return nil, err
+		}
+
+		basicAuth = a
+	}
+
 	return &types.ControllerConfig{
 		RebuildInterval:         rebuildInterval,
 		GatewayURL:              gURL,
@@ -48,5 +59,6 @@ func getControllerConfig() (*types.ControllerConfig, error) {
 		PrintResponse:           true,
 		PrintResponseBody:       printResponseBody,
 		PrintRequestBody:        false,
+		BasicAuth:               basicAuth,
 	}, nil
 }
