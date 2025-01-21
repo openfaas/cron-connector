@@ -56,7 +56,7 @@ func main() {
 		for {
 			r := <-invoker.Responses
 			if r.Error != nil {
-				log.Printf("Error with: %s, %s", r.Function, err.Error())
+				log.Printf("Error with %s: %s", r.Function, r.Error)
 			} else {
 				duration := fmt.Sprintf("%.2fs", r.Duration.Seconds())
 				if r.Duration < time.Second*1 {
