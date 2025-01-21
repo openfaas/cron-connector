@@ -8,13 +8,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
+
+	sdk "github.com/openfaas/go-sdk"
 
 	"github.com/openfaas/connector-sdk/types"
 	crontypes "github.com/openfaas/cron-connector/types"
 	"github.com/openfaas/cron-connector/version"
-	sdk "github.com/openfaas/faas-cli/proxy"
 	ptypes "github.com/openfaas/faas-provider/types"
 )
 
@@ -50,7 +52,8 @@ func main() {
 		httpClient,
 		config.ContentType,
 		config.PrintResponse,
-		config.PrintRequestBody)
+		config.PrintRequestBody,
+		"openfaas-ce/cron-connector")
 
 	go func() {
 		for {
@@ -70,9 +73,20 @@ func main() {
 		}
 	}()
 
+	auth, err := crontypes.GetClientAuth()
+	if err != nil {
+		log.Fatalf("Failed to get auth credentials: %s", err)
+	}
+
 	cronScheduler := crontypes.NewScheduler()
 	cronScheduler.Start()
-	if err := startFunctionProbe(config.RebuildInterval, rebuildTimeout, topic, config, cronScheduler, invoker); err != nil {
+
+	u, err := url.Parse(config.GatewayURL)
+	if err != nil {
+		log.Fatalf("Failed to parse gateway URL: %s", err)
+	}
+
+	if err := startFunctionProbe(u, config.RebuildInterval, rebuildTimeout, topic, config, cronScheduler, invoker, auth); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
 		os.Exit(1)
 	}
@@ -98,19 +112,13 @@ func (auth *BasicAuth) Set(req *http.Request) error {
 	return nil
 }
 
-func startFunctionProbe(interval time.Duration, probeTimeout time.Duration, topic string, c *types.ControllerConfig, cronScheduler *crontypes.Scheduler, invoker *types.Invoker) error {
+func startFunctionProbe(gatewayURL *url.URL, interval time.Duration, probeTimeout time.Duration, topic string, c *types.ControllerConfig, cronScheduler *crontypes.Scheduler, invoker *types.Invoker, auth sdk.ClientAuth) error {
 	runningFuncs := make(crontypes.ScheduledFunctions, 0)
 
-	creds := types.GetCredentials()
-	auth := &BasicAuth{
-		Username: creds.User,
-		Password: creds.Password,
-	}
+	httpClient := &http.Client{}
+	httpClient.Timeout = probeTimeout
 
-	sdkClient, err := sdk.NewClient(auth, c.GatewayURL, nil, &probeTimeout)
-	if err != nil {
-		return err
-	}
+	sdkClient := sdk.NewClient(gatewayURL, auth, httpClient)
 
 	ctx := context.Background()
 
@@ -120,14 +128,14 @@ func startFunctionProbe(interval time.Duration, probeTimeout time.Duration, topi
 	for {
 		<-ticker.C
 
-		namespaces, err := sdkClient.ListNamespaces(ctx)
+		namespaces, err := sdkClient.GetNamespaces(ctx)
 		if err != nil {
 			log.Printf("error listing namespaces: %s", err)
 			continue
 		}
 
 		for _, namespace := range namespaces {
-			functions, err := sdkClient.ListFunctions(ctx, namespace)
+			functions, err := sdkClient.GetFunctions(ctx, namespace)
 			if err != nil {
 				log.Printf("error listing functions in %s: %s", namespace, err)
 				continue
