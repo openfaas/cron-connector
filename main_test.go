@@ -31,7 +31,7 @@ func TestGetNewAndDeleteFuncs(t *testing.T) {
 		t.Error("function was not added")
 	}
 
-	if !deleteFuncs.Contains(&oldFuncs[2].Function) && !addFuncs.Contains(&newCronFunctions[2]) {
+	if !deleteFuncs.Contains(&oldFuncs[2].Function) || !addFuncs.Contains(&newCronFunctions[2]) {
 		t.Error("function will not be updated")
 	}
 
@@ -61,7 +61,7 @@ func TestNamespaceFuncs(t *testing.T) {
 		t.Error("function was not added")
 	}
 
-	if !deleteFuncs.Contains(&oldFuncs[2].Function) && !addFuncs.Contains(&newCronFunctions[2]) {
+	if !deleteFuncs.Contains(&oldFuncs[2].Function) || !addFuncs.Contains(&newCronFunctions[2]) {
 		t.Error("function will not be updated")
 	}
 
