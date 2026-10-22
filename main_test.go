@@ -10,7 +10,7 @@ import (
 	ptypes "github.com/openfaas/faas-provider/types"
 )
 
-func TestgetNewAndDeleteFuncs(t *testing.T) {
+func TestGetNewAndDeleteFuncs(t *testing.T) {
 	newCronFunctions := make(cfunction.CronFunctions, 3)
 	defaultReq := ptypes.FunctionStatus{}
 	newCronFunctions[0] = cfunction.CronFunction{FuncData: defaultReq, Name: "test_function_unchanged", Namespace: "openfaas-fn", Schedule: "* * * * *"}
