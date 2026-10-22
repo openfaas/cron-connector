@@ -1,6 +1,6 @@
 FROM ghcr.io/openfaas/license-check:0.4.2 AS license-check
 
-FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.23 AS build
+FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:1.27 AS build
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -17,7 +17,7 @@ COPY . .
 
 RUN license-check -path /go/src/github.com/openfaas/cron-connector/ --verbose=false "Alex Ellis" "OpenFaaS Author(s)"
 RUN gofmt -l -d $(find . -type f -name '*.go' -not -path "./vendor/*")
-RUN CGO_ENABLED=${CGO_ENABLED} GOOS=${TARGETOS} GOARCH=${TARGETARCH} go test -v ./...
+RUN CGO_ENABLED=${CGO_ENABLED} go test -v ./...
 
 RUN VERSION=$(git describe --all --exact-match `git rev-parse HEAD` | grep tags | sed 's/tags\///') \
     && GIT_COMMIT=$(git rev-list -1 HEAD) \
