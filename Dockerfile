@@ -43,8 +43,8 @@ RUN addgroup -S app \
 
 WORKDIR /home/app
 
-ENV http_proxy      ""
-ENV https_proxy     ""
+ENV http_proxy=""
+ENV https_proxy=""
 
 COPY --from=build /go/src/github.com/openfaas/cron-connector/cron-connector    .
 RUN chown -R app:app ./
